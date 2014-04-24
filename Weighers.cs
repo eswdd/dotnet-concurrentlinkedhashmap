@@ -50,7 +50,7 @@ namespace ConcurrentLinkedDictionary
 
 	}
 	sealed class EntryWeigherView<K, V> : IEntryWeigher<K, V> {
-		readonly IWeigher<V> weigher;
+		internal readonly IWeigher<V> weigher;
 
 		internal EntryWeigherView(IWeigher<V> weigher) {
 			if (weigher == null) {
@@ -64,7 +64,7 @@ namespace ConcurrentLinkedDictionary
 		}
 	}
 
-	sealed class SingletonEntryWeigher<K,V> : IEntryWeigher<K, V> {
+	internal sealed class SingletonEntryWeigher<K,V> : IEntryWeigher<K, V> {
 
 		public int weightOf(K key, V value) {
 			return 1;

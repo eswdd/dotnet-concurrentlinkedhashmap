@@ -14,7 +14,7 @@ namespace ConcurrentLinkedDictionary
 		static readonly int NCPU = Environment.ProcessorCount;
 
 		/*		* The maximum weighted capacity of the map. */
-		static readonly long MAXIMUM_CAPACITY = long.MaxValue - int.MaxValue;
+		public static readonly long MAXIMUM_CAPACITY = long.MaxValue - int.MaxValue;
 
 		/*		* The number of read buffers to use. */
 		static readonly int NUMBER_OF_READ_BUFFERS = ceilingNextPowerOfTwo(NCPU);
@@ -52,7 +52,7 @@ namespace ConcurrentLinkedDictionary
 
 		// The backing data store holding the key-value associations
 		readonly ConcurrentDictionary<K, Node> data;
-		readonly int concurrencyLevel;
+		internal readonly int concurrencyLevel;
 
 		// These fields provide support to bound the map by a maximum capacity
 		//@GuardedBy("evictionLock")
@@ -77,11 +77,11 @@ namespace ConcurrentLinkedDictionary
 		readonly PaddedAtomicReference<Node>[][] readBuffers;
 
 		readonly PaddedAtomicReference<string> drainStatus;
-		readonly IEntryWeigher<K, V> weigher;
+		internal readonly IEntryWeigher<K, V> weigher;
 
 		// These fields provide support for notifying a listener.
 		readonly IDequeue<Node> pendingNotifications;
-		readonly IEvictionListener<K, V> listener;
+		internal readonly IEvictionListener<K, V> listener;
 
 		// todo: were transient
 		ISet<K> keySet;
@@ -1421,8 +1421,8 @@ namespace ConcurrentLinkedDictionary
 		* }</pre>
 	*/
 	public sealed class Builder<K, V> {
-		static readonly int DEFAULT_CONCURRENCY_LEVEL = 16;
-		static readonly int DEFAULT_INITIAL_CAPACITY = 16;
+		public static readonly int DEFAULT_CONCURRENCY_LEVEL = 16;
+		public static readonly int DEFAULT_INITIAL_CAPACITY = 16;
 
 		internal IEvictionListener<K, V> listener;
 		internal IEntryWeigher<K, V> weigher;
@@ -1449,7 +1449,7 @@ namespace ConcurrentLinkedDictionary
      * @throws IllegalArgumentException if the initialCapacity is negative
      */
 		public Builder<K, V> InitialCapacity(int initialCapacity) {
-			checkArgument(initialCapacity >= 0);
+			checkArgumentRange(initialCapacity >= 0);
 			this.initialCapacity = initialCapacity;
 			return this;
 		}
@@ -1463,7 +1463,7 @@ namespace ConcurrentLinkedDictionary
      *     negative
      */
 		public Builder<K, V> MaximumWeightedCapacity(long capacity) {
-			checkArgument(capacity >= 0);
+			checkArgumentRange(capacity >= 0);
 			this.capacity = capacity;
 			return this;
 		}
@@ -1479,7 +1479,7 @@ namespace ConcurrentLinkedDictionary
      *     equal to zero
      */
 		public Builder<K, V> ConcurrencyLevel(int concurrencyLevel) {
-			checkArgument(concurrencyLevel > 0);
+			checkArgumentRange(concurrencyLevel > 0);
 			this.concurrencyLevel = concurrencyLevel;
 			return this;
 		}
@@ -1548,6 +1548,13 @@ namespace ConcurrentLinkedDictionary
 		private void checkArgument(bool expression) {
 			if (!expression) {
 				throw new ArgumentException();
+			}
+		}
+
+		/*				* Ensures that the argument expression is true. */
+		private void checkArgumentRange(bool expression) {
+			if (!expression) {
+				throw new ArgumentOutOfRangeException();
 			}
 		}
 
@@ -1801,7 +1808,7 @@ namespace ConcurrentLinkedDictionary
 	}
 	/*			* A weigher that enforces that the weight falls within a valid range. */
 	internal sealed class BoundedEntryWeigher<K,V> : IEntryWeigher<K, V> {
-		readonly IEntryWeigher<K, V> weigher;
+		internal readonly IEntryWeigher<K, V> weigher;
 
 		internal BoundedEntryWeigher(IEntryWeigher<K, V> weigher) {
 			if (weigher == null)

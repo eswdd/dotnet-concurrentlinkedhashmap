@@ -8,7 +8,7 @@
     <ProjectGuid>{A727D6EE-6322-40B1-B114-FB6069C2CB21}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>blah</RootNamespace>
-    <AssemblyName>blah</AssemblyName>
+    <AssemblyName>ConcurrentLinkedDictionary</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
