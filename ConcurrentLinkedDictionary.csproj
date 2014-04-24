@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{A727D6EE-6322-40B1-B114-FB6069C2CB21}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>blah</RootNamespace>
+    <AssemblyName>blah</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ConcurrentLinkedDictionary.cs" />
+    <Compile Include="Deque.cs" />
+    <Compile Include="IDequeue.cs" />
+    <Compile Include="IEntryWeigher.cs" />
+    <Compile Include="IEvictionListener.cs" />
+    <Compile Include="IWeigher.cs" />
+    <Compile Include="LinkedDeque.cs" />
+    <Compile Include="Weighers.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="Java\ConcurrentHashMapV8.java" />
+    <None Include="Java\EntryWeigher.java" />
+    <None Include="Java\EvictionListener.java" />
+    <None Include="Java\LinkedDeque.java" />
+    <None Include="Java\Weigher.java" />
+    <None Include="Java\Weighers.java" />
+    <None Include="Java\package-info.java" />
+    <None Include="Java\ConcurrentLinkedHashMap.java" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Java\" />
+  </ItemGroup>
+</Project>
