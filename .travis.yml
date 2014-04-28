@@ -1,0 +1,8 @@
+language: c
+ 
+install:
+  - sudo apt-get install mono-devel mono-gmcs nunit-console
+ 
+script:
+  - xbuild ConcurrentLinkedDictionary.xbuild
+  - nunit-console Test/bin/Debug/ConcurrentLinkedDictionaryTest.dll
