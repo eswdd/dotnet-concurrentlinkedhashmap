@@ -38,6 +38,10 @@
     <Compile Include="SimpleMapTest.cs" />
     <Compile Include="AbstractTest.cs" />
     <Compile Include="BuilderTest.cs" />
+    <Compile Include="ConcurrentDictionaryTest.cs" />
+    <Compile Include="EvictionTest.cs" />
+    <Compile Include="LinkedDequeTest.cs" />
+    <Compile Include="IsEmptyCollection.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -52,7 +56,6 @@
     <None Include="Java\IsReserializable.java" />
     <None Include="Java\IsValidConcurrentLinkedHashMap.java" />
     <None Include="Java\IsValidLinkedDeque.java" />
-    <None Include="Java\LinkedDequeTest.java" />
     <None Include="Java\MemoryLeakTest.java" />
     <None Include="Java\MultiThreadedTest.java" />
     <None Include="Java\Profile.java" />

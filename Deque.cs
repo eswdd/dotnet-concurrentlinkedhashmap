@@ -3,8 +3,9 @@ using System.Collections.Generic;
 
 namespace ConcurrentLinkedDictionary
 {
-	public class Deque<T> : Queue<T>, IDequeue<T>
+	public class Deque<T> : Queue<T>, IDeque<T>
 	{
+
 		public Deque ()
 		{
 		}
@@ -14,20 +15,20 @@ namespace ConcurrentLinkedDictionary
 			Enqueue (item);
 		}
 
-		public bool Remove (T item)
+		public bool Remove(T item)
 		{
 			throw new NotSupportedException ();
 		}
 
 		public bool IsReadOnly {
 			get {
-				throw new NotImplementedException ();
+				return false;
 			}
 		}
 
 		public bool IsEmpty {
 			get {
-				throw new NotImplementedException ();
+				return Count == 0;
 			}
 		}
 	}

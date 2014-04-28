@@ -38,7 +38,7 @@ namespace ConcurrentLinkedDictionary
 		static readonly int WRITE_BUFFER_DRAIN_THRESHOLD = 16;
 
 		/*		* A queue that discards all entries. */
-		static readonly IDequeue<Action> DISCARDING_QUEUE = new DiscardingQueue<Action>();
+		static readonly IDeque<Action> DISCARDING_QUEUE = new DiscardingQueue<Action>();
 
 		static int ceilingNextPowerOfTwo(int x) {
 			// From Hacker's Delight, Chapter 3, Harry S. Warren Jr.
@@ -80,7 +80,7 @@ namespace ConcurrentLinkedDictionary
 		internal readonly IEntryWeigher<K, V> weigher;
 
 		// These fields provide support for notifying a listener.
-		readonly IDequeue<Node> pendingNotifications;
+		readonly IDeque<Node> pendingNotifications;
 		internal readonly IEvictionListener<K, V> listener;
 
 		// todo: were transient
@@ -345,7 +345,7 @@ namespace ConcurrentLinkedDictionary
 			// This can occur when the entry was concurrently read while a writer was
 			// removing it. If the entry is no longer linked then it does not need to
 			// be processed.
-			if (evictionDeque.contains(node)) {
+			if (evictionDeque.Contains(node)) {
 				evictionDeque.moveToBack(node);
 			}
 		}
@@ -1658,7 +1658,7 @@ namespace ConcurrentLinkedDictionary
 		}
 	}
 
-	class AbstractQueue<T> : AbstractCollection<T>, IDequeue<T>
+	class AbstractQueue<T> : AbstractCollection<T>, IDeque<T>
 	{
 		public virtual T Dequeue ()
 		{
@@ -1668,7 +1668,31 @@ namespace ConcurrentLinkedDictionary
 		{
 			throw new NotImplementedException ();
 		}
+		public virtual bool Offer (T value)
+		{
+			throw new NotImplementedException ();
+		}
 		public virtual T Peek ()
+		{
+			throw new NotImplementedException ();
+		}
+		public virtual T PeekFirst ()
+		{
+			throw new NotImplementedException ();
+		}
+		public virtual T PeekLast ()
+		{
+			throw new NotImplementedException ();
+		}
+		public virtual T GetFirst ()
+		{
+			throw new NotImplementedException ();
+		}
+		public virtual T GetLast ()
+		{
+			throw new NotImplementedException ();
+		}
+		public virtual T Element ()
 		{
 			throw new NotImplementedException ();
 		}

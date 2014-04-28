@@ -1,5 +1,6 @@
 ﻿using System;
 using ConcurrentLinkedDictionary;
+using NUnit.Framework.Constraints;
 
 namespace ConcurrentLinkedDictionary.Test
 {
@@ -56,6 +57,11 @@ namespace ConcurrentLinkedDictionary.Test
 			return new Object[][] {
 				new Object[] {new Builder<int, byte[]>().MaximumWeightedCapacity(Capacity())}
 			};
+		}
+		/* ------------ Constraint providers ------------ */
+		protected IResolveConstraint emptyCollection<T>()
+		{
+			return new IsEmptyCollection<T> ();
 		}
 
 		protected enum TestType

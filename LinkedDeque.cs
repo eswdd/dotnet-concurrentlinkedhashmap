@@ -5,58 +5,55 @@ using System.Collections.Concurrent;
 
 namespace ConcurrentLinkedDictionary
 {
-	/*	*
- * Linked list implementation of the {@link Deque} interface where the link
- * pointers are tightly integrated with the element. Linked deques have no
- * capacity restrictions; they grow as necessary to support usage. They are not
- * thread-safe; in the absence of external synchronization, they do not support
- * concurrent access by multiple threads. Null elements are prohibited.
- * <p>
- * Most <tt>LinkedDeque</tt> operations run in constant time by assuming that
- * the {@link Linked} parameter is associated with the deque instance. Any usage
- * that violates this assumption will result in non-deterministic behavior.
- * <p>
- * The iterators returned by this class are <em>not</em> <i>fail-fast</i>: If
- * the deque is modified at any time after the iterator is created, the iterator
- * will be in an unknown state. Thus, in the face of concurrent modification,
- * the iterator risks arbitrary, non-deterministic behavior at an undetermined
- * time in the future.
- *
- * @author ben.manes@gmail.com (Ben Manes)
- * @param <E> the type of elements held in this collection
- * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
- *      http://code.google.com/p/concurrentlinkedhashmap/</a>
- */
-	//@NotThreadSafe
-	sealed class LinkedDeque<E> : IDequeue<E> where E : ILinked<E>
+	/// <summary>
+	/// Linked list implementation of the {@link Deque} interface where the link
+	/// pointers are tightly integrated with the element. Linked deques have no
+	/// capacity restrictions; they grow as necessary to support usage. They are not
+	/// thread-safe; in the absence of external synchronization, they do not support
+	/// concurrent access by multiple threads. Null elements are prohibited.
+	/// 
+	/// Most <tt>LinkedDeque</tt> operations run in constant time by assuming that
+	/// the {@link Linked} parameter is associated with the deque instance. Any usage
+	/// that violates this assumption will result in non-deterministic behavior.
+	/// 
+	/// The iterators returned by this class are <em>not</em> <i>fail-fast</i>: If
+	/// the deque is modified at any time after the iterator is created, the iterator
+	/// will be in an unknown state. Thus, in the face of concurrent modification,
+	/// the iterator risks arbitrary, non-deterministic behavior at an undetermined
+	/// time in the future.
+	/// Original author: ben.manes@google.com (Ben Manes)
+	/// Ported by: Simon Matic Langford
+	/// </summary>
+	public sealed class LinkedDeque<E> : IDeque<E> where E : ILinked<E>
 	{
 
 		// This class provides a doubly-linked list that is optimized for the virtual
-		// machine. The first and last elements are manipulated instead of a slightly
+		// machine (I assume the optimisation holds true for the CLR). The first 
+		// and last elements are manipulated instead of a slightly
 		// more convenient sentinel element to avoid the insertion of null checks with
 		// NullPointerException throws in the byte code. The links to a removed
 		// element are cleared to help a generational garbage collector if the
 		// discarded elements inhabit more than one generation.
 
 		/*		*
-   * Pointer to first node.
-   * Invariant: (first == null && last == null) ||
-   *            (first.prev == null)
+  Pointer to first node.
+  Invariant: (first == null && last == null) ||
+             (first.prev == null)
    */
-		E first;
+		internal E first;
 
 		/*		*
-   * Pointer to last node.
-   * Invariant: (first == null && last == null) ||
-   *            (last.next == null)
+  Pointer to last node.
+  Invariant: (first == null && last == null) ||
+             (last.next == null)
    */
-		E last;
+		internal E last;
 
 		/*		*
-   * Links the element to the front of the deque so that it becomes the first
-   * element.
+  Links the element to the front of the deque so that it becomes the first
+  element.
    *
-   * @param e the unlinked element
+  @param e the unlinked element
    */
 		void linkFirst(E e) {
 			E f = first;
@@ -71,10 +68,10 @@ namespace ConcurrentLinkedDictionary
 		}
 
 		/*		*
-   * Links the element to the back of the deque so that it becomes the last
-   * element.
+  Links the element to the back of the deque so that it becomes the last
+  element.
    *
-   * @param e the unlinked element
+  @param e the unlinked element
    */
 		void linkLast(E e) {
 		    E l = last;
@@ -174,8 +171,8 @@ namespace ConcurrentLinkedDictionary
 		}
 
 		//@Override
-		public bool contains(Object o) {
-			return (o is ILinked<E>) && contains((ILinked<E>) o);
+		public bool Contains(Object o) {
+			return (o is ILinked<E>) && Contains((ILinked<E>) o);
 		}
 
 		// A fast-path containment check
@@ -186,10 +183,10 @@ namespace ConcurrentLinkedDictionary
 		}
 
 		/*		*
-   * Moves the element to the front of the deque so that it becomes the first
-   * element.
+  Moves the element to the front of the deque so that it becomes the first
+  element.
    *
-   * @param e the linked element
+  @param e the linked element
    */
 		public void moveToFront(E e) {
 			if (!object.ReferenceEquals(e,first)) {
@@ -199,10 +196,10 @@ namespace ConcurrentLinkedDictionary
 		}
 
 		/*		*
-   * Moves the element to the back of the deque so that it becomes the last
-   * element.
+  Moves the element to the back of the deque so that it becomes the last
+  element.
    *
-   * @param e the linked element
+  @param e the linked element
    */
 		public void moveToBack(E e) {
 			if (!object.ReferenceEquals(e,last)) {
@@ -284,7 +281,7 @@ namespace ConcurrentLinkedDictionary
 		*/
 		//@Override
 		private void offerLast(E e) {
-			if (contains(e)) {
+			if (Contains(e)) {
 				return;
 			}
 			linkLast(e);
@@ -338,7 +335,7 @@ namespace ConcurrentLinkedDictionary
 
 		// A fast-path removal
 		public bool Remove(E e) {
-			if (contains(e)) {
+			if (Contains(e)) {
 				unlink(e);
 				return true;
 			}
@@ -435,6 +432,7 @@ namespace ConcurrentLinkedDictionary
 		internal abstract class AbstractLinkedIterator<T> : IEnumerator<T> {
 			T start;
 			protected T cursor;
+			protected bool started;
 
 			/// <summary>
 			/// Creates an iterator that can can traverse the deque.
@@ -442,7 +440,6 @@ namespace ConcurrentLinkedDictionary
 			/// <param name="start">the initial element to begin traversal from</param>
 			protected AbstractLinkedIterator(T start) {
 				this.start = start;
-				cursor = start;
 			}
 
 			public object Current 
@@ -462,16 +459,22 @@ namespace ConcurrentLinkedDictionary
 			}
 
 			public bool MoveNext() {
-				if (cursor == null) 
-				{
-					return false;
+				if (!started) {
+					cursor = start;
+					started = true;
+				} 
+				else {
+					if (Equals(cursor, default(T))) {
+						return false;
+					}
+					cursor = computeNext ();
 				}
-				cursor = computeNext();
 				return (cursor != null);
 			}
 
 			public void Reset() {
-				cursor = start;
+				cursor = default(T);
+				started = true;
 			}
 
 			public void Dispose() {
@@ -487,7 +490,7 @@ namespace ConcurrentLinkedDictionary
 	/// <summary>
 	/// An element that is linked on the <see cref="IDequeue"/>.
 	/// </summary>
-	internal interface ILinked<T> where T : ILinked<T>
+	public interface ILinked<T> where T : ILinked<T>
 	{
 		/// <summary>
 		/// The previous element or <tt>null</tt> if either the element is

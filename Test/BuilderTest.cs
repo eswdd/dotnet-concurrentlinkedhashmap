@@ -4,6 +4,11 @@ using ConcurrentLinkedDictionary;
 
 namespace ConcurrentLinkedDictionary.Test
 {
+	/// <summary>
+	/// A unit-test for the builder methods.
+	/// Original author: bmanes@google.com (Ben Manes)
+	/// Ported by: Simon Matic Langford
+	/// </summary>
 	[TestFixture]
 	[Category("development")]
 	public class BuilderTest : AbstractTest

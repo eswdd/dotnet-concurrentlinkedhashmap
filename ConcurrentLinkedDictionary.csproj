@@ -33,12 +33,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ConcurrentLinkedDictionary.cs" />
     <Compile Include="Deque.cs" />
-    <Compile Include="IDequeue.cs" />
     <Compile Include="IEntryWeigher.cs" />
     <Compile Include="IEvictionListener.cs" />
     <Compile Include="IWeigher.cs" />
     <Compile Include="LinkedDeque.cs" />
     <Compile Include="Weighers.cs" />
+    <Compile Include="IDeque.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
