@@ -303,7 +303,7 @@ namespace ConcurrentLinkedDictionary
 
 		/*		* Drains the read and write buffers up to an amortized threshold. */
 		//@GuardedBy("evictionLock")
-		void drainBuffers() {
+		internal void drainBuffers() {
 			drainReadBuffers();
 			drainWriteBuffer();
 		}
