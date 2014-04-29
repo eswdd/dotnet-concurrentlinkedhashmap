@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ConcurrentLinkedDictionary
 {
@@ -30,6 +31,11 @@ namespace ConcurrentLinkedDictionary
 			get {
 				return Count == 0;
 			}
+		}
+
+		public IEnumerator<T> GetDescendingEnumerator()
+		{
+			return this.Reverse ().GetEnumerator ();
 		}
 	}
 }

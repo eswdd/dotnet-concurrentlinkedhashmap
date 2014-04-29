@@ -19,6 +19,8 @@ namespace ConcurrentLinkedDictionary
 		Type GetFirst ();
 		Type Element ();*/
 		Type[] ToArray ();
+
+		IEnumerator<Type> GetDescendingEnumerator ();
 	}
 }
 

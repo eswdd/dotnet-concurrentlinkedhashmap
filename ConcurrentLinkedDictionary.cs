@@ -1668,31 +1668,7 @@ namespace ConcurrentLinkedDictionary
 		{
 			throw new NotImplementedException ();
 		}
-		public virtual bool Offer (T value)
-		{
-			throw new NotImplementedException ();
-		}
 		public virtual T Peek ()
-		{
-			throw new NotImplementedException ();
-		}
-		public virtual T PeekFirst ()
-		{
-			throw new NotImplementedException ();
-		}
-		public virtual T PeekLast ()
-		{
-			throw new NotImplementedException ();
-		}
-		public virtual T GetFirst ()
-		{
-			throw new NotImplementedException ();
-		}
-		public virtual T GetLast ()
-		{
-			throw new NotImplementedException ();
-		}
-		public virtual T Element ()
 		{
 			throw new NotImplementedException ();
 		}
@@ -1705,6 +1681,11 @@ namespace ConcurrentLinkedDictionary
 				throw new NotImplementedException ();
 			}
 		}
+		public virtual IEnumerator<T> GetDescendingEnumerator()
+		{
+			throw new NotImplementedException ();
+		}
+
 	}
 
 	class AbstractSet<T> : AbstractCollection<T>, ISet<T> 
