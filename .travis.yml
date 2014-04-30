@@ -3,7 +3,8 @@ language: c
 install:
   - sudo add-apt-repository ppa:inizan-yannick/mono -y
   - sudo apt-get update
-  - sudo apt-get install mono-devel mono-gmcs nunit-console
+  #- sudo apt-get install mono-devel mono-gmcs nunit-console
+  - sudo apt-get install mono mono-addins nunit-console
  
 script:
   - xbuild ConcurrentLinkedDictionary.xbuild
