@@ -4,7 +4,8 @@ install:
   - sudo add-apt-repository ppa:inizan-yannick/mono -y
   - sudo apt-get update
   #- sudo apt-get install mono-devel mono-gmcs nunit-console
-  - sudo apt-get install mono-devel mono-mcs nunit-console
+  - sudo apt-get install mono-devel=3.4.1 mono-mcs=3.4.1
+  - sudo apt-get install nunit-console
  
 script:
   - xbuild ConcurrentLinkedDictionary.xbuild
