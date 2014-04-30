@@ -51,18 +51,18 @@ namespace ConcurrentLinkedDictionary
 		}
 
 		// The backing data store holding the key-value associations
-		readonly ConcurrentDictionary<K, Node> data;
+		internal readonly ConcurrentDictionary<K, Node> data;
 		internal readonly int concurrencyLevel;
 
 		// These fields provide support to bound the map by a maximum capacity
 		//@GuardedBy("evictionLock")
 		readonly long[] readBufferReadCount;
 		//@GuardedBy("evictionLock")
-		readonly LinkedDeque<Node> evictionDeque;
+		internal readonly LinkedDeque<Node> evictionDeque;
 
 		//@GuardedBy("evictionLock") // must write under lock
 		// was PaddedAtomicLong
-		readonly PaddedAtomicLong weightedSize;
+		internal readonly PaddedAtomicLong weightedSize;
 		//@GuardedBy("evictionLock") // must write under lock
 		// was PaddedAtomicLong
 		readonly PaddedAtomicLong capacity;
@@ -170,7 +170,7 @@ namespace ConcurrentLinkedDictionary
 			{
 				// no lazy set :(
 				this.capacity.LazySet (Math.Min (capacity, MAXIMUM_CAPACITY));
-				drainBuffers();
+				DrainBuffers();
 				evict();
 			}
 			notifyListener();
@@ -293,7 +293,7 @@ namespace ConcurrentLinkedDictionary
 			if (Monitor.TryEnter( evictionLock)) {
 				try {
 					drainStatus.LazySet(DrainStatus.PROCESSING);
-					drainBuffers();
+					DrainBuffers();
 				} finally {
 					drainStatus.CompareAndSet(DrainStatus.PROCESSING, DrainStatus.IDLE);
 					Monitor.Exit (evictionLock);
@@ -303,7 +303,7 @@ namespace ConcurrentLinkedDictionary
 
 		/*		* Drains the read and write buffers up to an amortized threshold. */
 		//@GuardedBy("evictionLock")
-		internal void drainBuffers() {
+		internal void DrainBuffers() {
 			drainReadBuffers();
 			drainWriteBuffer();
 		}
@@ -1026,7 +1026,7 @@ namespace ConcurrentLinkedDictionary
 
 		/*		* A value, its weight, and the entry's status. */
 		//@Immutable
-		sealed class WeightedValue {
+		internal sealed class WeightedValue {
 			internal readonly int weight;
 			internal readonly V value;
 
@@ -1068,7 +1068,7 @@ namespace ConcurrentLinkedDictionary
    * the page-replacement algorithm's data structures.
    */
 		//@SuppressWarnings("serial")
-		sealed class Node : AtomicReference<WeightedValue>, ILinked<Node> {
+		internal sealed class Node : AtomicReference<WeightedValue>, ILinked<Node> {
 			readonly K key;
 			//@GuardedBy("evictionLock")
 			Node prev;

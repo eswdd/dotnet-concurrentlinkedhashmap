@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace ConcurrentLinkedDictionary.Test
 {
@@ -46,16 +47,19 @@ namespace ConcurrentLinkedDictionary.Test
 		}
 
 		private bool CheckIsEmpty(ConcurrentLinkedDictionary<K, V> map) {
-			map.drainBuffers();
-			/*
-			builder.expectThat("Internal not empty", map.data.isEmpty(), is(true));
-			builder.expectThat("Internal size != 0", map.data.size(), is(0));
-			builder.expectThat("Weighted size != 0", map.weightedSize(), is(0L));
-			builder.expectThat("Internal weighted size != 0", map.weightedSize.get(), is(0L));
-			builder.expectThat("first not null: " + map.evictionDeque,
-				map.evictionDeque.peekFirst(), is(nullValue()));
-			builder.expectThat("last not null", map.evictionDeque.peekLast(), is(nullValue()));
-			*/
+			map.DrainBuffers();
+
+			if (!map.data.IsEmpty)
+				return false;
+			if (map.data.Count != 0)
+				return false;
+			if (map.WeightedSize() != 0)
+				return false;
+			if (map.weightedSize.GetValue () != 0)
+				return false;
+			if (map.evictionDeque.Peek () != null)
+				return false;
+
 			return true;
 		}
 

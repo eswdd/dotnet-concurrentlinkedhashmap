@@ -54,7 +54,6 @@
     <None Include="Java\ConcurrentTestHarness.java" />
     <None Include="Java\DescriptionBuilder.java" />
     <None Include="Java\EvictionTest.java" />
-    <None Include="Java\IsEmptyMap.java" />
     <None Include="Java\IsReserializable.java" />
     <None Include="Java\IsValidConcurrentLinkedHashMap.java" />
     <None Include="Java\IsValidLinkedDeque.java" />
