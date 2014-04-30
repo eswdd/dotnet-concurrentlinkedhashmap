@@ -6,7 +6,7 @@ install:
   - sudo apt-get update
   #- sudo apt-get install mono-devel mono-gmcs nunit-console
   #- sudo apt-get install mono-devel=3.4.1 mono-mcs=3.4.1
-  - sudo apt-get install mono-devel=3.2.8 mono-mcs=3.2.8
+  - sudo apt-get install mono-devel=3.2.1 mono-mcs=3.2.1
   - sudo apt-get install nunit-console
  
 script:
