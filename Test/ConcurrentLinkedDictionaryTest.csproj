@@ -60,7 +60,6 @@
     <None Include="Java\MemoryLeakTest.java" />
     <None Include="Java\MultiThreadedTest.java" />
     <None Include="Java\Profile.java" />
-    <None Include="Java\TestStatusListener.java" />
     <None Include="Java\WeigherTest.java" />
     <None Include="Java\Benchmark\Benchmarks.java" />
     <None Include="Java\Benchmark\CacheBenchmark.java" />
