@@ -38,7 +38,7 @@ namespace ConcurrentLinkedDictionary.Test
 		[Test]
 		[TestCaseSource("EmptyDeque")]
 		public void isEmpty_whenEmpty(IDeque<SimpleLinkedValue> deque) {
-			Assert.That(deque.IsEmpty, Is.True);
+			Assert.That(deque, emptyCollection<SimpleLinkedValue>());
 		}
 
 		[Test]
