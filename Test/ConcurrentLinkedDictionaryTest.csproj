@@ -3,11 +3,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>10.0.0</ProductVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{598D5A5D-9A23-4B0C-9E3C-9C14C0C0E6A0}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Test</RootNamespace>
+    <RootNamespace>ConcurrentLinkedDictionary.Test</RootNamespace>
     <AssemblyName>ConcurrentLinkedDictionaryTest</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
@@ -46,6 +46,10 @@
     <Compile Include="IsEmptyCollection.cs" />
     <Compile Include="IsEmptyDictionary.cs" />
     <Compile Include="DescriptionBuilder.cs" />
+    <Compile Include="IsValidConcurrentLinkedDictionary.cs" />
+    <Compile Include="ImmutableDictionary.cs" />
+    <Compile Include="DictionaryConstraint.cs" />
+    <Compile Include="CollectionConstraints.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -55,7 +59,6 @@
     <None Include="Java\ConcurrentTestHarness.java" />
     <None Include="Java\EvictionTest.java" />
     <None Include="Java\IsReserializable.java" />
-    <None Include="Java\IsValidConcurrentLinkedHashMap.java" />
     <None Include="Java\IsValidLinkedDeque.java" />
     <None Include="Java\MemoryLeakTest.java" />
     <None Include="Java\MultiThreadedTest.java" />

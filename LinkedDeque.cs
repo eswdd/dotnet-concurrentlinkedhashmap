@@ -212,7 +212,10 @@ namespace ConcurrentLinkedDictionary
 
 		public E Dequeue()
 		{
-			return IsEmpty ? default(E) : unlinkFirst();
+			if (IsEmpty) {
+				throw new InvalidOperationException ("queue is empty");
+			}
+			return unlinkFirst();
 		}
 		public void Enqueue(E value)
 		{
@@ -230,6 +233,23 @@ namespace ConcurrentLinkedDictionary
 		public void CopyTo(E[] array, int len)
 		{
 			// todo
+		}
+
+		public void CopyTo (Array array, int index)
+		{
+			throw new NotImplementedException ();
+		}
+
+		public bool IsSynchronized {
+			get {
+				return false;
+			}
+		}
+
+		public object SyncRoot {
+			get {
+				return this;
+			}
 		}
 
 		/*

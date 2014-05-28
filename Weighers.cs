@@ -31,12 +31,16 @@ namespace ConcurrentLinkedDictionary
 			return byteArrayWeigher;
 		}
 
-		public static IWeigher<IEnumerable> Enumerable() {
-			return new EnumerableWeigher ();
+		public static IWeigher<IEnumerable<V>> Enumerable<V>() {
+			return new EnumerableWeigher<V> ();
 		}
 
 		public static IWeigher<ICollection> Collection() {
 			return new CollectionWeigher ();
+		}
+
+		public static IWeigher<ICollection<T>> Collection<T>() {
+			return new CollectionWeigher<T> ();
 		}
 
 		public static IWeigher<IList> List() {
@@ -87,9 +91,9 @@ namespace ConcurrentLinkedDictionary
 		}
 	}
 
-	sealed class EnumerableWeigher : IWeigher<IEnumerable> {
+	sealed class EnumerableWeigher<V> : IWeigher<IEnumerable<V>> {
 
-		public int weightOf(IEnumerable values) {
+		public int weightOf(IEnumerable<V> values) {
 			if (values is ICollection) {
 				return ((ICollection) values).Count;
 			}
@@ -109,6 +113,15 @@ namespace ConcurrentLinkedDictionary
 
 
 		public int weightOf(ICollection values) {
+			return values.Count;
+		}
+	}
+
+
+	sealed class CollectionWeigher<T> : IWeigher<ICollection<T>> {
+
+
+		public int weightOf(ICollection<T> values) {
 			return values.Count;
 		}
 	}

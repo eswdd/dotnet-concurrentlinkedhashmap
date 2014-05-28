@@ -74,8 +74,8 @@ namespace ConcurrentLinkedDictionary.Test
 
 		private void CheckQueue(Queue<Type> c)
 		{
-			builder.ExpectThat (c.Peek (), Is.Null);
-			builder.ExpectThat (c.Dequeue (), Is.Null);
+			builder.ExpectThat(c.Peek (), Is.Null);
+			builder.ExpectException<InvalidOperationException> (() => c.Dequeue ());
 			if (c.ToArray () != null) {
 				builder.ExpectThat (c.ToArray ().Length, Is.EqualTo (0));
 			}
@@ -84,8 +84,8 @@ namespace ConcurrentLinkedDictionary.Test
 
 		private void CheckDeque(IDeque<Type> c)
 		{
-			builder.ExpectThat (c.Peek (), Is.Null);
-			builder.ExpectThat (c.Dequeue (), Is.Null);
+			builder.ExpectThat(c.Peek (), Is.Null);
+			builder.ExpectException<InvalidOperationException> (() => c.Dequeue ());
 			if (c.ToArray () != null) {
 				builder.ExpectThat (c.ToArray ().Length, Is.EqualTo (0));
 			}

@@ -115,88 +115,6 @@ public abstract class AbstractTest {
 
   /* ---------------- Map providers -------------- */
 
-  /** Provides a builder with the capacity set. */
-  @DataProvider(name = "builder")
-  public Object[][] providesBuilder() {
-    return new Object[][] {{
-      new Builder<Object, Object>().maximumWeightedCapacity(capacity())
-    }};
-  }
-
-  /** Provides an empty map for test methods. */
-  @DataProvider(name = "emptyMap")
-  public Object[][] providesEmptyMap() {
-    return new Object[][] {{ newEmptyMap() }};
-  }
-
-  /** Creates a map with the default capacity. */
-  protected <K, V> ConcurrentLinkedHashMap<K, V> newEmptyMap() {
-    return new Builder<K, V>()
-        .maximumWeightedCapacity(capacity())
-        .build();
-  }
-
-  /** Provides a guarded map for test methods. */
-  @DataProvider(name = "guardedMap")
-  public Object[][] providesGuardedMap() {
-    return new Object[][] {{ newGuarded() }};
-  }
-
-  /** Creates a map that fails if an eviction occurs. */
-  protected <K, V> ConcurrentLinkedHashMap<K, V> newGuarded() {
-    EvictionListener<K, V> guardingListener = guardingListener();
-    return new Builder<K, V>()
-        .maximumWeightedCapacity(capacity())
-        .listener(guardingListener)
-        .build();
-  }
-
-  /** Provides a warmed map for test methods. */
-  @DataProvider(name = "warmedMap")
-  public Object[][] providesWarmedMap() {
-    return new Object[][] {{ newWarmedMap() }};
-  }
-
-  /** Creates a map with warmed to capacity. */
-  protected ConcurrentLinkedHashMap<Integer, Integer> newWarmedMap() {
-    ConcurrentLinkedHashMap<Integer, Integer> map = newEmptyMap();
-    warmUp(map, 0, capacity());
-    return map;
-  }
-
-  @DataProvider(name = "emptyWeightedMap")
-  public Object[][] providesEmptyWeightedMap() {
-    return new Object[][] {{ newEmptyWeightedMap() }};
-  }
-
-  private <K, V> ConcurrentLinkedHashMap<K, Iterable<V>> newEmptyWeightedMap() {
-    return new Builder<K, Iterable<V>>()
-        .maximumWeightedCapacity(capacity())
-        .weigher(Weighers.<V>iterable())
-        .build();
-  }
-
-  @DataProvider(name = "guardedWeightedMap")
-  public Object[][] providesGuardedWeightedMap() {
-    return new Object[][] {{ newGuardedWeightedMap() }};
-  }
-
-  private <K, V> ConcurrentLinkedHashMap<K, Iterable<V>> newGuardedWeightedMap() {
-    EvictionListener<K, Iterable<V>> guardingListener = guardingListener();
-    return new Builder<K, Iterable<V>>()
-        .maximumWeightedCapacity(capacity())
-        .weigher(Weighers.<V>iterable())
-        .listener(guardingListener)
-        .build();
-  }
-
-  @SuppressWarnings("unchecked")
-  private <K, V> EvictionListener<K, V> guardingListener() {
-    EvictionListener<K, V> guardingListener = (EvictionListener<K, V>) listener;
-    doThrow(new AssertionError()).when(guardingListener)
-        .onEviction(Mockito.<K>any(), Mockito.<V>any());
-    return guardingListener;
-  }
 
   /* ---------------- Weigher providers -------------- */
 
@@ -240,15 +158,4 @@ public abstract class AbstractTest {
     return new Object[][] {{ Weighers.map() }};
   }
 
-  /* ---------------- Utility methods ------------- */
-
-  /**
-   * Populates the map with the half-closed interval [start, end) where the
-   * value is the negation of the key.
-   */
-  protected static void warmUp(Map<Integer, Integer> map, int start, long end) {
-    for (Integer i = start; i < end; i++) {
-      assertThat(map.put(i, -i), is(nullValue()));
-    }
-  }
 }

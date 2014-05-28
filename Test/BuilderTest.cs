@@ -22,28 +22,28 @@ namespace ConcurrentLinkedDictionary.Test
 		[Test]
 		[ExpectedException(typeof(InvalidOperationException))]
 		public void unconfigured() {
-			new Builder<Object, Object>().Build();
+			new Builder<int,int>().Build();
 		}
 
 	
 		[Test]
 		[TestCaseSource("Builder")]
 		[ExpectedException(typeof(ArgumentOutOfRangeException))]
-		public void initialCapacity_withNegative(Builder<Object, Object> builder) {
+		public void initialCapacity_withNegative(Builder<int,int> builder) {
 			builder.InitialCapacity(-100);
 		}
 
 
 		[Test]
 		[TestCaseSource("Builder")]
-		public void initialCapacity_withDefault(Builder<Object, Object> builder) {
-			Assert.That (builder.initialCapacity, Is.EqualTo (Builder<Object,Object>.DEFAULT_INITIAL_CAPACITY));
+		public void initialCapacity_withDefault(Builder<int,int> builder) {
+			Assert.That (builder.initialCapacity, Is.EqualTo (ConcurrentLinkedDictionary.Builder<Object,Object>.DEFAULT_INITIAL_CAPACITY));
 			builder.Build(); // can't check, so just assert that it builds
 		}
 
 		[Test]
 		[TestCaseSource("Builder")]
-		public void initialCapacity_withCustom(Builder<Object, Object> builder) {
+		public void initialCapacity_withCustom(Builder<int, int> builder) {
 			Assert.That(builder.InitialCapacity(100).initialCapacity, Is.EqualTo(100));
 			builder.Build(); // can't check, so just assert that it builds
 		}
@@ -52,19 +52,19 @@ namespace ConcurrentLinkedDictionary.Test
 		[Test]
 		[TestCaseSource("Builder")]
 		[ExpectedException(typeof(ArgumentOutOfRangeException))]
-		public void maximumWeightedCapacity_withNegative(Builder<Object, Object> builder) {
+		public void maximumWeightedCapacity_withNegative(Builder<int,int> builder) {
 			builder.MaximumWeightedCapacity(-100);
 		}
 
 		[Test]
 		[TestCaseSource("Builder")]
-		public void maximumWeightedCapacity(Builder<Object, Object> builder) {
+		public void maximumWeightedCapacity(Builder<int,int> builder) {
 			Assert.That(builder.Build().Capacity(), Is.EqualTo(Capacity()));
 		}
 
 		[Test]
 		[TestCaseSource("Builder")]
-		public void maximumWeightedCapacity_aboveMaximum(Builder<Object, Object> builder) {
+		public void maximumWeightedCapacity_aboveMaximum(Builder<int,int> builder) {
 			builder.MaximumWeightedCapacity(ConcurrentLinkedDictionary<Object, Object>.MAXIMUM_CAPACITY + 1);
 			Assert.That(builder.Build().Capacity(), Is.EqualTo(ConcurrentLinkedDictionary<Object, Object>.MAXIMUM_CAPACITY));
 		}
@@ -72,41 +72,41 @@ namespace ConcurrentLinkedDictionary.Test
 		[Test]
 		[TestCaseSource("Builder")]
 		[ExpectedException(typeof(ArgumentOutOfRangeException))]
-		public void concurrencyLevel_withZero(Builder<Object, Object> builder) {
+		public void concurrencyLevel_withZero(Builder<int,int> builder) {
 			builder.ConcurrencyLevel(0);
 		}
 
 		[Test]
 		[TestCaseSource("Builder")]
 		[ExpectedException(typeof(ArgumentOutOfRangeException))]
-		public void concurrencyLevel_withNegative(Builder<Object, Object> builder) {
+		public void concurrencyLevel_withNegative(Builder<int,int> builder) {
 			builder.ConcurrencyLevel(-100);
 		}
 
 		[Test]
 		[TestCaseSource("Builder")]
-		public void concurrencyLevel_withDefault(Builder<Object, Object> builder) {
-			Assert.That(builder.Build().concurrencyLevel, Is.EqualTo(Builder<Object, Object>.DEFAULT_CONCURRENCY_LEVEL));
+		public void concurrencyLevel_withDefault(Builder<int,int> builder) {
+			Assert.That(builder.Build().concurrencyLevel, Is.EqualTo(ConcurrentLinkedDictionary.Builder<int,int>.DEFAULT_CONCURRENCY_LEVEL));
 		}
 
 		[Test]
 		[TestCaseSource("Builder")]
-		public void concurrencyLevel_withCustom(Builder<Object, Object> builder) {
+		public void concurrencyLevel_withCustom(Builder<int,int> builder) {
 			Assert.That(builder.ConcurrencyLevel(32).Build().concurrencyLevel, Is.EqualTo(32));
 		}
 
 		[Test]
 		[TestCaseSource("Builder")]
 		[ExpectedException(typeof(ArgumentNullException))]
-		public void listener_withNull(Builder<Object, Object> builder) {
+		public void listener_withNull(Builder<int,int> builder) {
 			builder.Listener(null);
 		}
 
 
 		[Test]
 		[TestCaseSource("Builder")]
-		public void listener_withDefault(Builder<Object, Object> builder) {
-			Assert.That(builder.Build().listener, Is.InstanceOf<DiscardingListener<Object,Object>>());
+		public void listener_withDefault(Builder<int,int> builder) {
+			Assert.That(builder.Build().listener, Is.InstanceOf<DiscardingListener<int,int>>());
 		}
 
 		[Test] // todo: need to get moq integrated
@@ -120,19 +120,19 @@ namespace ConcurrentLinkedDictionary.Test
 		[Test]
 		[TestCaseSource("Builder")]
 		[ExpectedException(typeof(ArgumentNullException))]
-		public void weigher_withNull(Builder<Object, Object> builder) {
-			builder.Weigher((IWeigher<Object>)null);
+		public void weigher_withNull(Builder<int,int> builder) {
+			builder.Weigher((IWeigher<int>)null);
 		}
 
 		[Test]
 		[TestCaseSource("Builder")]
 		[ExpectedException(typeof(ArgumentNullException))]
-		public void weigher_withNull_entry(Builder<Object, Object> builder) {
-				builder.Weigher((IEntryWeigher<Object, Object>) null);
+		public void weigher_withNull_entry(Builder<int,int> builder) {
+			builder.Weigher((IEntryWeigher<int, int>) null);
 		}
 			
 		[Test]
-		[TestCaseSource("BuilderIntInt")]
+		[TestCaseSource("Builder")]
 		public void weigher_withDefault(Builder<int, int> builder) {
 			Assert.That(builder.Build().weigher, Is.InstanceOf<SingletonEntryWeigher<int,int>>());
 		}
@@ -147,7 +147,7 @@ namespace ConcurrentLinkedDictionary.Test
 		}
 
 		[Test]
-		[TestCaseSource("BuilderIntInt")]
+		[TestCaseSource("Builder")]
 		public void weigher_withCustom_entry(Builder<int, int> builder) {
 			IEntryWeigher<int, int> custom = new CustomEntryWeigher();
 			builder.Weigher(custom);

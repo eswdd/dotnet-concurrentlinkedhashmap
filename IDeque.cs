@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections;
 
 namespace ConcurrentLinkedDictionary
 {
-	public interface IDeque<Type> : ICollection<Type>
+	public interface IDeque<Type> : ICollection<Type>, ICollection
 	{
 		bool IsEmpty { get; }
 

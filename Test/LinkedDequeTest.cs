@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using NUnit.Framework.Constraints;
 using System.Linq;
+using System.Collections;
 
 namespace ConcurrentLinkedDictionary.Test
 {
@@ -50,13 +51,13 @@ namespace ConcurrentLinkedDictionary.Test
 		[Test]
 		[TestCaseSource("EmptyDeque")]
 		public void size_whenEmpty(IDeque<SimpleLinkedValue> deque) {
-			Assert.That(deque.Count, Is.EqualTo(0));
+			Assert.That(deque, HasCount(0));
 		}
 
 		[Test]
 		[TestCaseSource("WarmedDeque")]
 		public void size_whenPopulated(IDeque<SimpleLinkedValue> deque) {
-			Assert.That(deque.Count, Is.EqualTo((int) Capacity()));
+					Assert.That(deque, HasCount((int) Capacity()));
 			// linq uses the IEnumerable interface
 			Assert.That(deque.Count(), Is.EqualTo((int) Capacity()));
 		}
@@ -346,7 +347,7 @@ namespace ConcurrentLinkedDictionary.Test
 			SimpleLinkedValue value = new SimpleLinkedValue(1);
 			deque.Add (value);
 			Assert.That(deque.Peek(), Is.SameAs(value));
-			Assert.That(deque.Count, Is.EqualTo(1));
+			Assert.That(deque, HasCount(1));
 		}
 
 		[Test]
@@ -355,15 +356,15 @@ namespace ConcurrentLinkedDictionary.Test
 			SimpleLinkedValue value = new SimpleLinkedValue((int) Capacity());
 			deque.Add(value);
 			Assert.That(deque.Peek(), Is.Not.SameAs(value));
-			Assert.That(deque.Count, Is.EqualTo((int) Capacity() + 1));
+			Assert.That(deque, HasCount((int) Capacity() + 1));
 		}
 			
 		[Test]
 		[TestCaseSource("WarmedDeque")]
 		public void add_whenLinked(IDeque<SimpleLinkedValue> deque) {
-			var sizeBefore = deque.Count;
+			var sizeBefore = ((ICollection)deque).Count;
 			deque.Add(deque.Peek());
-			Assert.That (deque.Count, Is.EqualTo (sizeBefore));
+			Assert.That (deque, HasCount(sizeBefore));
 		}
 
 		// methods not supported
@@ -449,7 +450,7 @@ namespace ConcurrentLinkedDictionary.Test
 		[Test]
 		[TestCaseSource("EmptyDeque")]
 		public void dequeue_whenEmpty(IDeque<SimpleLinkedValue> deque) {
-			Assert.That(deque.Dequeue(), Is.Null);
+			Assert.Throws<InvalidOperationException> (new TestDelegate(() => { deque.Dequeue (); }));
 		}
 
 		[Test]
@@ -457,7 +458,7 @@ namespace ConcurrentLinkedDictionary.Test
 		public void dequeue_whenPopulated(IDeque<SimpleLinkedValue> deque) {
 			SimpleLinkedValue first = deque.Peek();
 			Assert.That(deque.Dequeue(), Is.SameAs(first));
-			Assert.That(deque.Count, Is.EqualTo((int) Capacity() - 1));
+			Assert.That(deque, HasCount((int) Capacity() - 1));
 			Assert.That(deque.Contains(first), Is.False);
 		}
 
@@ -465,7 +466,8 @@ namespace ConcurrentLinkedDictionary.Test
 		[TestCaseSource("WarmedDeque")]
 		public void dequeue_toEmpty(IDeque<SimpleLinkedValue> deque) {
 			SimpleLinkedValue value;
-			while ((value = deque.Dequeue()) != null) {
+			while (deque.Peek() != null) {
+				value = deque.Dequeue ();
 				Assert.That(deque.Contains(value), Is.False);
 			}
 			Assert.That(deque, emptyCollection<SimpleLinkedValue>());
@@ -539,7 +541,7 @@ namespace ConcurrentLinkedDictionary.Test
 		public void removeElement_whenFound(IDeque<SimpleLinkedValue> deque) {
 			SimpleLinkedValue first = deque.Peek();
 			Assert.That(deque.Remove(first), Is.True);
-			Assert.That(deque.Count, Is.EqualTo((int) Capacity() - 1));
+			Assert.That(deque, HasCount((int) Capacity() - 1));
 			Assert.That(deque.Contains(first), Is.False);
 		}
 

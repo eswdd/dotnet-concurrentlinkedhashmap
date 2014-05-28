@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Collections;
 
 namespace ConcurrentLinkedDictionary
 {
@@ -23,7 +24,7 @@ namespace ConcurrentLinkedDictionary
 		static readonly int READ_BUFFERS_MASK = NUMBER_OF_READ_BUFFERS - 1;
 
 		/*		* The number of pending read operations before attempting to drain. */
-		static readonly int READ_BUFFER_THRESHOLD = 32;
+		internal static readonly int READ_BUFFER_THRESHOLD = 32;
 
 		/*		* The maximum number of read operations to perform per amortized drain. */
 		static readonly int READ_BUFFER_DRAIN_THRESHOLD = 2 * READ_BUFFER_THRESHOLD;
@@ -56,7 +57,7 @@ namespace ConcurrentLinkedDictionary
 
 		// These fields provide support to bound the map by a maximum capacity
 		//@GuardedBy("evictionLock")
-		readonly long[] readBufferReadCount;
+		internal readonly long[] readBufferReadCount;
 		//@GuardedBy("evictionLock")
 		internal readonly LinkedDeque<Node> evictionDeque;
 
@@ -65,22 +66,22 @@ namespace ConcurrentLinkedDictionary
 		internal readonly PaddedAtomicLong weightedSize;
 		//@GuardedBy("evictionLock") // must write under lock
 		// was PaddedAtomicLong
-		readonly PaddedAtomicLong capacity;
+		internal readonly PaddedAtomicLong capacity;
 
 		// todo: used to be reentrant lock
-		readonly object evictionLock;
-		readonly ConcurrentQueue<Action> writeBuffer;
+		internal readonly ReaderWriterLockSlim evictionLock;
+		internal readonly ConcurrentQueue<Action> writeBuffer;
 		// was PaddedAtomicLong[]
-		readonly PaddedAtomicLong[] readBufferWriteCount;
+		internal readonly PaddedAtomicLong[] readBufferWriteCount;
 		// was PaddedAtomicLong[]
-		readonly PaddedAtomicLong[] readBufferDrainAtWriteCount;
-		readonly PaddedAtomicReference<Node>[][] readBuffers;
+		internal readonly PaddedAtomicLong[] readBufferDrainAtWriteCount;
+		internal readonly PaddedAtomicReference<Node>[][] readBuffers;
 
-		readonly PaddedAtomicReference<string> drainStatus;
+		internal readonly PaddedAtomicReference<string> drainStatus;
 		internal readonly IEntryWeigher<K, V> weigher;
 
 		// These fields provide support for notifying a listener.
-		readonly IDeque<Node> pendingNotifications;
+		internal readonly IDeque<Node> pendingNotifications;
 		internal readonly IEvictionListener<K, V> listener;
 
 		// todo: were transient
@@ -96,7 +97,7 @@ namespace ConcurrentLinkedDictionary
 
 			// The eviction support
 			weigher = builder.weigher;
-			evictionLock = new object ();//todo: ReentrantLock();
+			evictionLock = new ReaderWriterLockSlim ();
 			weightedSize = new PaddedAtomicLong();
 			evictionDeque = new LinkedDeque<Node>();
 			writeBuffer = new ConcurrentQueue<Action>();
@@ -139,6 +140,13 @@ namespace ConcurrentLinkedDictionary
 			}
 		}
 
+		/*		* Ensures that the argument expression is true. */
+		private static void checkArgumentRange(bool expression) {
+			if (!expression) {
+				throw new ArgumentOutOfRangeException();
+			}
+		}
+
 		/*		* Ensures that the state expression is true. */
 		private static void checkState(bool expression) {
 			if (!expression) {
@@ -165,13 +173,17 @@ namespace ConcurrentLinkedDictionary
    * @throws IllegalArgumentException if the capacity is negative
    */
 		public void setCapacity(long capacity) {
-			checkArgument(capacity >= 0);
-			lock(evictionLock)
+			checkArgumentRange(capacity >= 0);
+			evictionLock.EnterWriteLock ();
+			try
 			{
 				// no lazy set :(
 				this.capacity.LazySet (Math.Min (capacity, MAXIMUM_CAPACITY));
 				DrainBuffers();
 				evict();
+			}
+			finally {
+				evictionLock.ExitWriteLock ();
 			}
 			notifyListener();
 		}
@@ -195,13 +207,16 @@ namespace ConcurrentLinkedDictionary
 			// that if an eviction is still required then a new victim will be chosen
 			// for removal.
 			while (hasOverflowed()) {
-				Node node = evictionDeque.Dequeue();
+				Node node = evictionDeque.Peek ();
 
 				// If weighted values are used, then the pending operations will adjust
 				// the size to reflect the correct weight
 				if (node == null) {
 					return;
 				}
+
+				// need to dequeue that peek - i hate .net queue api. why is there no TryDequeue??
+				node = evictionDeque.Dequeue ();
 
 				// Notify the listener only if the entry was evicted
 				if (DataTryRemove(node.Key, node)) {
@@ -221,7 +236,7 @@ namespace ConcurrentLinkedDictionary
    *
    * @param node the entry in the page replacement policy
    */
-		void afterRead(Node node) {
+		internal void afterRead(Node node) {
 			 int bufferIndex = readBufferIndex();
 		 long writeCount = recordRead(bufferIndex, node);
 			drainOnReadIfNeeded(bufferIndex, writeCount);
@@ -229,7 +244,7 @@ namespace ConcurrentLinkedDictionary
 		}
 
 		/*		* Returns the index to the read buffer to record into. */
-		static int readBufferIndex() {
+		internal static int readBufferIndex() {
 			// A buffer is chosen by the thread's id so that tasks are distributed in a
 			// pseudo evenly manner. This helps avoid hot entries causing contention
 			// due to other threads trying to append to the same buffer.
@@ -278,7 +293,7 @@ namespace ConcurrentLinkedDictionary
    *
    * @param task the pending operation to be applied
    */
-		void afterWrite(Action task) {
+		internal void afterWrite(Action task) {
 			writeBuffer.Enqueue(task);
 			drainStatus.LazySet(DrainStatus.REQUIRED);
 			tryToDrainBuffers();
@@ -289,14 +304,14 @@ namespace ConcurrentLinkedDictionary
    * Attempts to acquire the eviction lock and apply the pending operations, up
    * to the amortized threshold, to the page replacement policy.
    */
-		void tryToDrainBuffers() {
-			if (Monitor.TryEnter( evictionLock)) {
+		internal void tryToDrainBuffers() {
+			if (evictionLock.TryEnterWriteLock(0)) {
 				try {
 					drainStatus.LazySet(DrainStatus.PROCESSING);
 					DrainBuffers();
 				} finally {
 					drainStatus.CompareAndSet(DrainStatus.PROCESSING, DrainStatus.IDLE);
-					Monitor.Exit (evictionLock);
+						evictionLock.ExitWriteLock();
 				}
 			}
 		}
@@ -370,7 +385,7 @@ namespace ConcurrentLinkedDictionary
    * @param expect the expected weighted value
    * @return if successful
    */
-		bool tryToRetire(Node node, WeightedValue expect) {
+		internal bool tryToRetire(Node node, WeightedValue expect) {
 
 			if (expect.isAlive()) {
 				WeightedValue retired = new WeightedValue(expect.value, -expect.weight);
@@ -385,7 +400,7 @@ namespace ConcurrentLinkedDictionary
    *
    * @param node the entry in the page replacement policy
    */
-		void makeRetired(Node node) {
+		internal void makeRetired(Node node) {
 			for (;;) {
 				WeightedValue current = node.GetValue();
 				if (!current.isAlive()) {
@@ -418,8 +433,8 @@ namespace ConcurrentLinkedDictionary
 
 		/*		* Notifies the listener of entries that were evicted. */
 		void notifyListener() {
-			Node node;
-			while ((node = pendingNotifications.Dequeue()) != null) {
+			while (!pendingNotifications.IsEmpty) {
+			    var node = pendingNotifications.Dequeue();
 				listener.onEviction(node.Key, node.Value);
 			}
 		}
@@ -502,13 +517,14 @@ namespace ConcurrentLinkedDictionary
 
 		public ICollection<K> Keys {
 			get {
-				throw new NotImplementedException ();
+				return data.Keys;
 			}
 		}
 
 		public ICollection<V> Values {
 			get {
-				throw new NotImplementedException ();
+				ICollection<V> vs = values;
+				return (vs == null) ? (values = new InternalValues(this)) : vs;
 			}
 		}
 
@@ -523,10 +539,12 @@ namespace ConcurrentLinkedDictionary
 
 		public void Clear ()
 		{
-			lock (evictionLock) {
+		    evictionLock.EnterWriteLock();
+			try {
 				// Discard all entries
 				Node node;
-				while ((node = evictionDeque.Dequeue()) != null) {
+				while (evictionDeque.Peek() != null) {
+					node = evictionDeque.Dequeue();
 					DataTryRemove (node.Key, node);
 					makeDead(node);
 				}
@@ -543,6 +561,9 @@ namespace ConcurrentLinkedDictionary
 				while (writeBuffer.TryDequeue(out task)) {
 					task();
 				}
+			}
+		    finally{
+					evictionLock.ExitWriteLock();
 			}
 		}
 
@@ -579,7 +600,12 @@ namespace ConcurrentLinkedDictionary
 
 		public IEnumerator<KeyValuePair<K, V>> GetEnumerator ()
 		{
-			throw new NotImplementedException ();
+			return new InternalKeyValueEnumerator (data.GetEnumerator());
+		}
+
+		public IEnumerator<Entry<K, V>> GetEntryEnumerator ()
+		{
+			return new InternalEntryEnumerator (this);
 		}
 
 		#endregion
@@ -588,7 +614,7 @@ namespace ConcurrentLinkedDictionary
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
 		{
-			throw new NotImplementedException ();
+			return new InternalKeyValueEnumerator (data.GetEnumerator());
 		}
 
 		#endregion
@@ -613,7 +639,7 @@ namespace ConcurrentLinkedDictionary
 		public bool containsValue(Object value) {
 			checkNotNull(value);
 
-			return data.Any ((kvp) => kvp.Value.Equals (value));
+			return data.Any ((kvp) => Equals(kvp.Value.Value, value));
 		}
 
 		/// <summary>
@@ -665,7 +691,7 @@ namespace ConcurrentLinkedDictionary
 
 			for (;;) {
 				Node prior = data.GetOrAdd(node.Key, node);
-				if (prior == null) {
+				if (prior == node) { // ie added
 					afterWrite(AddTask(node, weight));
 					return default(V);
 				} else if (onlyIfAbsent) {
@@ -1011,7 +1037,7 @@ namespace ConcurrentLinkedDictionary
 		}
 
 		/*		* The draining status of the buffers. */
-		class DrainStatus  {
+		internal class DrainStatus  {
 
 			/*			* A drain is not taking place. */
 			public const string IDLE = "IDLE";
@@ -1069,7 +1095,7 @@ namespace ConcurrentLinkedDictionary
    */
 		//@SuppressWarnings("serial")
 		internal sealed class Node : AtomicReference<WeightedValue>, ILinked<Node> {
-			readonly K key;
+		    readonly K key;
 			//@GuardedBy("evictionLock")
 			Node prev;
 			//@GuardedBy("evictionLock")
@@ -1178,7 +1204,7 @@ namespace ConcurrentLinkedDictionary
 
 
 
-		/*		* An adapter to safely externalize the values. *//*
+		/*		* An adapter to safely externalize the values. */
 		sealed class InternalValues : AbstractCollection<V> {
 			readonly ConcurrentLinkedDictionary<K,V> map;
 			public InternalValues(ConcurrentLinkedDictionary<K,V> map) {
@@ -1198,139 +1224,223 @@ namespace ConcurrentLinkedDictionary
 
 			//@Override
 			public override IEnumerator<V> GetEnumerator () {
-				return new InternalValueEnumerator();
+				return new InternalValueEnumerator(map);
 			}
 
 			//@Override
 			public override bool Contains (V item) {
-				return containsValue(item);
+				return map.containsValue (item);
 			}
-		}*/
+		}
 
-		/*		* An adapter to safely externalize the value iterator. *//*
+		/*		* An adapter to safely externalize the value iterator. */
 		sealed class InternalValueEnumerator : IEnumerator<V> {
-			readonly IEnumerator<Node> iterator = data.values().iterator();
-			Node current;
+			readonly IEnumerator<Node> mapValuesEnumerator;
 			readonly ConcurrentLinkedDictionary<K,V> map;
 			public InternalValueEnumerator(ConcurrentLinkedDictionary<K,V> map) {
 				this.map = map;
+				mapValuesEnumerator = map.data.Values.GetEnumerator();
 			}
 
-			//@Override
-			public bool hasNext() {
-				return iterator.hasNext();
+			#region IEnumerator implementation
+
+			public bool MoveNext ()
+			{
+				return mapValuesEnumerator.MoveNext ();
 			}
 
-			//@Override
-			public V next() {
-				current = iterator.next();
-				return current.getValue();
+			public void Reset ()
+			{
+				mapValuesEnumerator.Reset ();
 			}
 
-			//@Override
-			public void remove() {
-				checkState(current != null);
-				map.remove(current.Key);
-				current = null;
+		    object System.Collections.IEnumerator.Current {
+				get {
+					return mapValuesEnumerator.Current.GetValue ();
+				}
 			}
-		}*/
 
-		/*		* An adapter to safely externalize the entries. *//*
-		sealed class InternalEntrySet : AbstractSet<KeyValuePair<K, V>> {
+			#endregion
+
+			#region IDisposable implementation
+
+			public void Dispose ()
+			{
+				mapValuesEnumerator.Dispose ();
+			}
+
+			#endregion
+
+			#region IEnumerator implementation
+
+			public V Current {
+				get {
+					return mapValuesEnumerator.Current.Value;
+				}
+			}
+
+			#endregion
+
+		}
+
+		/*		* An adapter to safely externalize the entries. */
+		sealed class InternalEntrySet : ICollection<KeyValuePair<K, V>> {
 			readonly ConcurrentLinkedDictionary<K, V> map;
 
 			InternalEntrySet(ConcurrentLinkedDictionary<K,V> map) {
 				this.map = map;
 			}
 
-			//@Override
-			public int size() {
-				return map.size();
+			#region ICollection implementation
+			public void Add (KeyValuePair<K, V> item)
+			{
+				map.Add (item);
 			}
-
-			//@Override
-			public void clear() {
-				map.clear();
+			public void Clear ()
+			{
+				map.Clear ();
 			}
-
-			//@Override
-			public IEnumerator<KeyValuePair<K, V>> iterator() {
-				return new InternalEntryEnumerator();
+			public bool Contains (KeyValuePair<K, V> item)
+			{
+				return map.Contains (item);
 			}
-
-			//@Override
-			public bool contains(Object obj) {
-				if (!(obj is KeyValuePair<K, V>)) {
-					return false;
+			public void CopyTo (KeyValuePair<K, V>[] array, int arrayIndex)
+			{
+				map.CopyTo (array, arrayIndex);
+			}
+			public bool Remove (KeyValuePair<K, V> item)
+			{
+				return map.Remove (item);
+			}
+			public int Count {
+				get {
+					return map.Count;
 				}
-				var entry = (KeyValuePair<K, V>) obj;
-				Node node = map.data.get(entry.getKey());
-				return (node != null) && (node.getValue().equals(entry.getValue()));
 			}
-
-			//@Override
-			public bool add(KeyValuePair<K, V> entry) {
-				return (map.putIfAbsent(entry.Key, entry.Value) == null);
-			}
-
-			//@Override
-			public bool remove(Object obj) {
-				if (!(obj is KeyValuePair<K, V>)) {
-					return false;
+			public bool IsReadOnly {
+				get {
+					return map.IsReadOnly;
 				}
-				KeyValuePair<K, V> entry = (KeyValuePair<K, V>) obj;
-				return map.remove(entry.Key, entry.Value);
 			}
-		}*/
+			#endregion
+			#region IEnumerable implementation
+			public IEnumerator<KeyValuePair<K, V>> GetEnumerator ()
+			{
+				return new InternalKeyValueEnumerator(map.data.GetEnumerator());
+			}
+			#endregion
+			#region IEnumerable implementation
+			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
+			{
+				return GetEnumerator ();
+			}
+			#endregion
 
-		/*		* An adapter to safely externalize the entry iterator. *//*
-				sealed class InternalEntryEnumerator : IEnumerator<KeyValuePair<K, V>> {
-			readonly IEnumerator<Node> iterator = data.values().iterator();
-			Node current;
-			readonly ConcurrentLinkedDictionary<K, V> map;
+		}
 
-			InternalEntryEnumerator(ConcurrentLinkedDictionary<K,V> map) {
-				this.map = map;
+		/*		* An adapter to safely externalize the entry iterator. */
+		sealed class InternalKeyValueEnumerator : IEnumerator<KeyValuePair<K, V>> {
+			readonly IEnumerator<KeyValuePair<K,Node>> iterator;
+
+			internal InternalKeyValueEnumerator(IEnumerator<KeyValuePair<K,Node>> iterator) {
+				this.iterator = iterator;
 			}
 
-			//@Override
-			public bool hasNext() {
-				return iterator.hasNext();
+			#region IEnumerator implementation
+			public bool MoveNext ()
+			{
+				return iterator.MoveNext ();
+			}
+			public void Reset ()
+			{
+				iterator.Reset ();
+			}
+			object System.Collections.IEnumerator.Current {
+				get {
+					return Current;
+				}
+			}
+			#endregion
+			#region IDisposable implementation
+			public void Dispose ()
+			{
+				iterator.Dispose ();
+			}
+			#endregion
+			#region IEnumerator implementation
+			public KeyValuePair<K, V> Current {
+				get {
+					var c = iterator.Current;
+					return new KeyValuePair<K,V> (c.Key, c.Value.Value);
+				}
+			}
+			#endregion
+
+
+		}
+		/*		* An adapter to safely externalize the entry iterator. */
+		sealed class InternalEntryEnumerator : IEnumerator<Entry<K, V>> {
+			readonly IEnumerator<KeyValuePair<K,Node>> iterator;
+
+			readonly ConcurrentLinkedDictionary<K, V> dictionary;
+
+			internal InternalEntryEnumerator(ConcurrentLinkedDictionary<K,V> dictionary) {
+				this.iterator = dictionary.data.GetEnumerator();
+				this.dictionary = dictionary;
 			}
 
-			//@Override
-			public KeyValuePair<K, V> next() {
-				current = iterator.next();
-				return new WriteThroughEntry(current);
+			#region IEnumerator implementation
+			public bool MoveNext ()
+			{
+				return iterator.MoveNext ();
 			}
-
-			//@Override
-			public void remove() {
-				checkState(current != null);
-				map.Remove(current.Key);
-				current = null;
+			public void Reset ()
+			{
+				iterator.Reset ();
 			}
-		}*/
+			object System.Collections.IEnumerator.Current {
+				get {
+					return Current;
+				}
+			}
+			#endregion
+			#region IDisposable implementation
+			public void Dispose ()
+			{
+				iterator.Dispose ();
+			}
+			#endregion
+			#region IEnumerator implementation
+			public Entry<K, V> Current {
+				get {
+					return new WriteThroughEntry (dictionary, iterator.Current);
+				}
+			}
+			#endregion
+
+
+		}
 
 
 
-		/*		* An entry that allows updates to write through to the map. *//*
+		/*		* An entry that allows updates to write through to the map. */
 		sealed class WriteThroughEntry : Entry<K, V> {
-
-			WriteThroughEntry(Node node) {
-				super(node.Key, node.Value);
+			private ConcurrentLinkedDictionary<K,V> dictionary;
+			internal WriteThroughEntry(ConcurrentLinkedDictionary<K,V> dictionary, KeyValuePair<K,Node> node) : base(node.Key, node.Value.Value) 
+			{
+				this.dictionary = dictionary;
 			}
 
-			//@Override
-			public V setValue(V value) {
-				put(getKey(), value);
-				return super.setValue(value);
+			public override V Value {
+				get {
+					return base.Value;
+				}
+				set {
+					dictionary.put (Key, value);
+					base.Value = value;
+				}
 			}
-
-			Object writeReplace() {
-				return new SimpleEntry<K, V>(this);
-			}
-		}*/
+		}
 
 
 		/*		* A queue that discards all additions and is always empty. */
@@ -1593,9 +1703,9 @@ namespace ConcurrentLinkedDictionary
 
 		public bool CompareAndSet (T compare, T newValue)
 		{
-
+			// todo: desperately need some atomicreference tests
 			T ret = Interlocked.CompareExchange (ref _value, newValue, compare);
-			return (ret == null && newValue == null) || (ret != null && ret.Equals (newValue));
+			return (ret == null && newValue == null) || (ret != null && Equals (ret, compare));
 		}
 
 	}
@@ -1686,6 +1796,7 @@ namespace ConcurrentLinkedDictionary
 			throw new NotImplementedException ();
 		}
 
+
 	}
 
 	class AbstractSet<T> : AbstractCollection<T>, ISet<T> 
@@ -1748,7 +1859,7 @@ namespace ConcurrentLinkedDictionary
 
 	}
 
-	abstract class AbstractCollection<V> : ICollection<V> {
+	abstract class AbstractCollection<V> : ICollection<V>, ICollection {
 
 		public virtual void Add (V item)
 		{
@@ -1795,18 +1906,35 @@ namespace ConcurrentLinkedDictionary
 		{
 			return GetEnumerator ();
 		}
+
+		public void CopyTo (Array array, int index)
+		{
+			throw new NotImplementedException ();
+		}
+
+		public bool IsSynchronized {
+			get {
+				throw new NotImplementedException ();
+			}
+		}
+
+		public object SyncRoot {
+			get {
+				throw new NotImplementedException ();
+			}
+		}
 	}
 
-	class Entry<K,V> {
+	public class Entry<K,V> {
 		public Entry(K key, V value) {
 			Key = key;
 			Value = value;
 		}
-		public K Key {
+		public virtual K Key {
 			get;
-			set;
+			private set;
 		}
-		public V Value {
+		public virtual V Value {
 			get;
 			set;
 		}
