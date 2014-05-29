@@ -835,10 +835,10 @@ namespace ConcurrentLinkedDictionary
    * of the keys.
    *
    * @return an ascending snapshot view of the keys in this map
-			*//*
+			*/
 		public ISet<K> AscendingKeySet() {
 			return AscendingKeySetWithLimit(int.MaxValue);
-		}*/
+		}
 
 		/*		*
    * Returns an unmodifiable snapshot {@link Set} view of the keys contained in
@@ -854,10 +854,10 @@ namespace ConcurrentLinkedDictionary
    * @param limit the maximum size of the returned set
    * @return a ascending snapshot view of the keys in this map
    * @throws IllegalArgumentException if the limit is negative
-   *//*
+   */
 		public ISet<K> AscendingKeySetWithLimit(int limit) {
 			return OrderedKeySet(true, limit);
-		}*/
+		}
 
 		/*		*
    * Returns an unmodifiable snapshot {@link Set} view of the keys contained in
@@ -871,10 +871,10 @@ namespace ConcurrentLinkedDictionary
    * of the keys.
    *
    * @return a descending snapshot view of the keys in this map
-			*//*
+			*/
 		public ISet<K> DescendingKeySet() {
 			return DescendingKeySetWithLimit(int.MaxValue);
-		}*/
+		}
 
 		/*		*
    * Returns an unmodifiable snapshot {@link Set} view of the keys contained in
@@ -890,30 +890,37 @@ namespace ConcurrentLinkedDictionary
    * @param limit the maximum size of the returned set
    * @return a descending snapshot view of the keys in this map
    * @throws IllegalArgumentException if the limit is negative
-				*//*
+				*/
 		public ISet<K> DescendingKeySetWithLimit(int limit) {
 			return OrderedKeySet(false, limit);
 		}
 
-		ISet<K> orderedKeySet(bool ascending, int limit) {
-			checkArgument(limit >= 0);
-			lock (evictionLock)
+		internal ISet<K> OrderedKeySet(bool ascending, int limit) {
+			checkArgumentRange(limit >= 0);
+			evictionLock.EnterWriteLock ();
+			try
 			{
-				drainBuffers();
+				DrainBuffers();
 
-				 int initialCapacity = (weigher == Weighers.entrySingleton())
-				                  ? Math.min(limit, (int) weightedSize())
-				                  : 16;
-				 Set<K> keys = new LinkedHashSet<K>(initialCapacity);
+//				int initialCapacity = (weigher == Weighers.EntrySingleton<>())
+//					? Math.Min(limit, (int) WeightedSize())
+//				                  : 16;
+				//int initialCapacity = Math.Min (limit, Count);
+				ISet<K> keys = new SortedSet<K> ();
 				IEnumerator<Node> iterator = ascending
-				                                 ? evictionDeque.GetEnumerator()
+					? (IEnumerator<Node>) evictionDeque.GetEnumerator()
 				                                 : evictionDeque.GetDescendingEnumerator();
-				while (iterator.hasNext() && (limit > keys.size())) {
-					keys.add(iterator.next().key);
+				while (iterator.MoveNext()  && (limit > keys.Count)) {
+					keys.Add(iterator.Current.Key);
 				}
-				return unmodifiableSet(keys);
+				return keys;
+				// todo: readonly wrapper!
+				//return unmodifiableSet(keys);
 			}
-		}*/
+			finally {
+				evictionLock.ExitWriteLock ();
+			}
+		}
 		/*
 		//@Override
 		public ICollection<V> Values() {
@@ -940,10 +947,10 @@ namespace ConcurrentLinkedDictionary
    * entries.
    *
    * @return a ascending snapshot view of this map
-				*//*
-		public IDictionary<K, V> AscendingMap() {
-			return AscendingMapWithLimit(int.MaxValue);
-			}*/
+				*/
+				public IDictionary<K, V> AscendingDictionary() {
+				return AscendingDictionaryWithLimit(int.MaxValue);
+			}
 
 		/*		*
    * Returns an unmodifiable snapshot {@link Map} view of the mappings contained
@@ -960,10 +967,10 @@ namespace ConcurrentLinkedDictionary
    * @param limit the maximum size of the returned map
    * @return a ascending snapshot view of this map
    * @throws IllegalArgumentException if the limit is negative
-   *//*
-		public IDictionary<K, V> AscendingMapWithLimit(int limit) {
+   */
+		public IDictionary<K, V> AscendingDictionaryWithLimit(int limit) {
 			return orderedMap(true, limit);
-		}*/
+		}
 
 		/*		*
    * Returns an unmodifiable snapshot {@link Map} view of the mappings contained
@@ -978,10 +985,10 @@ namespace ConcurrentLinkedDictionary
    * entries.
    *
    * @return a descending snapshot view of this map
-   *//*
-		public IDictionary<K, V> DescendingMap() {
-			return DescendingMapWithLimit(int.MaxValue);
-		}8/
+   */
+		public IDictionary<K, V> DescendingDictionary() {
+			return DescendingDictionaryWithLimit(int.MaxValue);
+		}
 
 		/*		*
    * Returns an unmodifiable snapshot {@link Map} view of the mappings contained
@@ -998,30 +1005,37 @@ namespace ConcurrentLinkedDictionary
    * @param limit the maximum size of the returned map
    * @return a descending snapshot view of this map
    * @throws IllegalArgumentException if the limit is negative
-   *//*
-		public IDictionary<K, V> DescendingMapWithLimit(int limit) {
+   */
+		public IDictionary<K, V> DescendingDictionaryWithLimit(int limit) {
 			return orderedMap(false, limit);
 		}
 
 		IDictionary<K, V> orderedMap(bool ascending, int limit) {
-			checkArgument(limit >= 0);
-			lock (evictionLock) {
-				drainBuffers();
+			checkArgumentRange(limit >= 0);
+			evictionLock.EnterWriteLock ();
+			try
+			{
+				DrainBuffers();
 
-				 int initialCapacity = (weigher == Weighers.entrySingleton())
-				                  ? Math.min(limit, (int) weightedSize())
-				                  : 16;
-				IDictionary<K, V> map = new LinkedHashMap<K, V>(initialCapacity);
+				//int initialCapacity = (weigher == Weighers.entrySingleton())
+				//                ? Math.min(limit, (int) weightedSize())
+				//                : 16;
+				IDictionary<K, V> map = new SortedDictionary<K, V> ();
 				IEnumerator<Node> iterator = ascending
-				                                   ? evictionDeque.GetEnumerator()
+					? (IEnumerator<Node>) evictionDeque.GetEnumerator()
 				                                   : evictionDeque.GetDescendingEnumerator();
-				while (iterator.hasNext() && (limit > map.size())) {
-					Node node = iterator.next();
-					map.put(node.key, node.getValue());
+				while (iterator.MoveNext() && (limit > map.Count)) {
+					Node node = iterator.Current;
+					map[node.Key] = node.Value;
 				}
-				return unmodifiableMap(map);
+				return map;
+				// todo: readonly map
+				//return unmodifiableMap(map);
 			} 
-		}*/
+			finally {
+				evictionLock.ExitWriteLock ();
+			}
+		}
 
 		private bool ShouldDrainBuffers(string status, bool delayable) 
 		{

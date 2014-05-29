@@ -57,7 +57,6 @@
     <None Include="Java\CacheType.java" />
     <None Include="Java\ConcurrentMapTest.java" />
     <None Include="Java\ConcurrentTestHarness.java" />
-    <None Include="Java\EvictionTest.java" />
     <None Include="Java\IsReserializable.java" />
     <None Include="Java\IsValidLinkedDeque.java" />
     <None Include="Java\MemoryLeakTest.java" />

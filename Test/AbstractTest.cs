@@ -3,6 +3,8 @@ using ConcurrentLinkedDictionary;
 using NUnit.Framework.Constraints;
 using System.Collections.Generic;
 using NUnit.Framework;
+using System.Threading;
+using System.Linq;
 
 namespace ConcurrentLinkedDictionary.Test
 {
@@ -199,11 +201,15 @@ namespace ConcurrentLinkedDictionary.Test
 				}
 			}
 
-		/* ------------ Constraint providers ------------ */
-		protected IResolveConstraint emptyCollection<T>()
-		{
-			return new IsEmptyCollection<T> ();
-		}
+			/* ------------ Constraint providers ------------ */
+			protected IResolveConstraint emptyCollection<T>()
+			{
+				return new IsEmptyCollection<T> ();
+			}
+			protected IResolveConstraint emptyMap<K,V>()
+			{
+				return new IsEmptyDictionary<K,V> ();
+			}
 
 			protected IResolveConstraint validConcurrentLinkedDictionary<K,V>()
 		{
@@ -219,6 +225,31 @@ namespace ConcurrentLinkedDictionary.Test
 		{
 			Standard
 		}
+
+
+			protected void waitUntil(Func<bool> func)
+			{
+				while (!func ()) {
+					Thread.Sleep (10);
+				}
+			}
+
+			protected IList<T> asList<T> (params T[] ts)
+			{
+				return ts.ToList ();
+			}
+
+			protected IDictionary<K,V> singletonMap<K,V> (K k, V v)
+			{
+				var ret = new Dictionary<K,V> ();
+				ret.Add (k, v);
+				return ret;
+			}
+
+			protected IDictionary<K, V> newLinkedHashMap<K,V> ()
+			{
+				return new SortedDictionary<K, V>();
+			}
 	}
 }
 

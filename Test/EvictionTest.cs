@@ -73,7 +73,7 @@ namespace ConcurrentLinkedDictionary.Test
 			Assert.That(map.Capacity(), Is.EqualTo(newMaxCapacity), "map cap is new max cap");
 			// todo: moq on mono
 			Assert.That (listener.Evictions, HasCount ((int)(Capacity () - newMaxCapacity)), "correct num of evictions");
-//			verify(listener, times((int) (capacity() - newMaxCapacity))).onEviction(anyInt(), anyInt());
+//			verify(listener, times((int) (Capacity() - newMaxCapacity))).onEviction(anyInt(), anyInt());
 		}
 
 		[Test]
@@ -273,14 +273,14 @@ namespace ConcurrentLinkedDictionary.Test
 		[Test]
 		public void evict_efficiency() {
 			IDictionary<string, string> expected = new CacheFactory()
-				.MaximumCapacity((int) capacity())
+				.MaximumCapacity((int) Capacity())
 				.MakeCache(CacheType.LinkedHashMap_Lru_Sync);
 			IDictionary<string, string> actual = new Builder<string, string>()
-				.MaximumWeightedCapacity(capacity())
+				.MaximumWeightedCapacity(Capacity())
 				.Build();
 
-			Generator generator = new ScrambledZipfianGenerator(10 * capacity());
-			List<String> workingSet = createWorkingSet(generator, 10 * (int) capacity());
+			Generator generator = new ScrambledZipfianGenerator(10 * Capacity());
+			List<String> workingSet = createWorkingSet(generator, 10 * (int) Capacity());
 
 			EfficiencyRun runExpected = determineEfficiency(expected, workingSet);
 			EfficiencyRun runActual = determineEfficiency(actual, workingSet);
@@ -440,7 +440,6 @@ namespace ConcurrentLinkedDictionary.Test
 		    });
 		}
 
-		/* TODO
 		[Test]
 		[TestCaseSource("GuardedMap")]
 		public void drain_blocksAscendingKeySet(ConcurrentLinkedDictionary<int, int> map)
@@ -470,10 +469,10 @@ namespace ConcurrentLinkedDictionary.Test
 		public void drain_blocksAscendingMap( ConcurrentLinkedDictionary<int, int> map)
 		{
 			checkDrainBlocks(map, () => {
-				map.AscendingMap();
+				map.AscendingDictionary();
 			});
 			checkDrainBlocks(map, () => {
-				map.AscendingMapWithLimit((int) Capacity());
+				map.AscendingDictionaryWithLimit((int) Capacity());
 			});
 		}
 
@@ -482,12 +481,12 @@ namespace ConcurrentLinkedDictionary.Test
 		public void drain_blocksDescendingMap( ConcurrentLinkedDictionary<int, int> map)
 		{
 			checkDrainBlocks(map, () => {
-				map.DescendingMap();
+				map.DescendingDictionary();
 			});
 			checkDrainBlocks(map, () => {
-				map.DescendingMapWithLimit((int) Capacity());
+				map.DescendingDictionaryWithLimit((int) Capacity());
 			});
-		}*/
+		}
 
 		[Test]
 		[TestCaseSource("GuardedMap")]
@@ -532,24 +531,291 @@ namespace ConcurrentLinkedDictionary.Test
 			Console.WriteLine("f");
 		}
 
-		private void waitUntil(Func<bool> func)
-		{
-			while (!func ()) {
-				Thread.Sleep (10);
+
+		/* ---------------- Ascending KeySet -------------- */
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingKeySet(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int> ();
+			WarmUp(expected, 1, Capacity());
+
+			Assert.That(map.AscendingKeySet(), Is.EqualTo(expected.Keys));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingKeySet_snapshot(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			WarmUp(expected, 1, Capacity());
+
+			ISet<int> original = map.AscendingKeySet();
+			map.put((int) Capacity(), (int) -Capacity());
+		
+			Assert.That(original, Is.EqualTo(expected.Keys));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingKeySetWithLimit_greaterThan(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			WarmUp(expected, 1, Capacity() / 2);
+
+			Assert.That(map.AscendingKeySetWithLimit((int) Capacity() / 2), Is.EqualTo(expected.Keys));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingKeySetWithLimit_lessThan(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			WarmUp(expected, 1, Capacity());
+
+			Assert.That(map.AscendingKeySetWithLimit((int) Capacity() * 2), Is.EqualTo(expected.Keys));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingKeySetWithLimit_snapshot(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			WarmUp(expected, 1, Capacity() / 2);
+
+			ISet<int> original = map.AscendingKeySetWithLimit((int) Capacity() / 2);
+			map.put((int) Capacity(), (int) -Capacity());
+
+			Assert.That(original, Is.EqualTo(expected.Keys));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingKeySetWithLimit_zero(ConcurrentLinkedDictionary<int, int> map) {
+			Assert.That(map.AscendingKeySetWithLimit(0), emptyCollection<int>());
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		[ExpectedException(typeof(ArgumentOutOfRangeException))]
+		public void AscendingKeySetWithLimit_negative(ConcurrentLinkedDictionary<int, int> map) {
+			map.AscendingKeySetWithLimit(-1);
+		}
+
+		/* ---------------- Descending KeySet -------------- */
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingKeySet(ConcurrentLinkedDictionary<int, int> map) {
+			ISet<int> expected = new SortedSet<int>();
+			for (int i = (int) Capacity(); i > 0; i--) {
+				expected.Add(i);
 			}
+
+			Assert.That(map.DescendingKeySet(), Is.EqualTo(expected));
 		}
 
-		IList<T> asList<T> (params T[] ts)
-		{
-			return ts.ToList ();
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingKeySet_snapshot(ConcurrentLinkedDictionary<int, int> map) {
+			ISet<int> expected = new SortedSet<int>();
+			for (int i = (int) Capacity(); i > 0; i--) {
+				expected.Add(i);
+			}
+
+			ISet<int> original = map.DescendingKeySet();
+			map.put((int) Capacity(), (int) -Capacity());
+
+			Assert.That(original, Is.EqualTo(original));
 		}
 
-		IDictionary<K,V> singletonMap<K,V> (K k, V v)
-		{
-			var ret = new Dictionary<K,V> ();
-			ret.Add (k, v);
-			return ret;
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingKeySetWithLimit_greaterThan(ConcurrentLinkedDictionary<int, int> map) {
+			ISet<int> expected = new SortedSet<int>();
+			for (int i = (int) Capacity(); i > Capacity() / 2; i--) {
+				expected.Add(i);
+			}
+			Assert.That(map.DescendingKeySetWithLimit((int) Capacity() / 2), Is.EqualTo(expected));
 		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingKeySetWithLimit_lessThan(ConcurrentLinkedDictionary<int, int> map) {
+			ISet<int> expected = new SortedSet<int>();
+			for (int i = (int) Capacity(); i > 0; i--) {
+				expected.Add(i);
+			}
+			Assert.That(map.DescendingKeySetWithLimit((int) Capacity() * 2), Is.EqualTo(expected));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingKeySetWithLimit_snapshot(ConcurrentLinkedDictionary<int, int> map) {
+			ISet<int> expected = new SortedSet<int>();
+			for (int i = (int) Capacity(); i > Capacity() / 2; i--) {
+				expected.Add(i);
+			}
+
+			ISet<int> original = map.DescendingKeySetWithLimit((int) Capacity() / 2);
+			map.put((int) Capacity(), (int) -Capacity());
+
+			Assert.That(original, Is.EqualTo(expected));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingKeySetWithLimit_zero(ConcurrentLinkedDictionary<int, int> map) {
+			Assert.That(map.DescendingKeySetWithLimit(0), emptyCollection<int>());
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		[ExpectedException(typeof(ArgumentOutOfRangeException))]
+		public void DescendingKeySetWithLimit_negative(ConcurrentLinkedDictionary<int, int> map) {
+			map.DescendingKeySetWithLimit(-1);
+		}
+
+		/* ---------------- Ascending Map -------------- */
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingDictionary(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			WarmUp(expected, 1, Capacity());
+
+			var dict = map.AscendingDictionary ();
+			Assert.That (dict, Is.InstanceOf<SortedDictionary<int,int>>());
+			Assert.That(dict.ToArray(), Is.EqualTo(expected.ToArray()));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingDictionary_snapshot(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			WarmUp(expected, 1, Capacity());
+
+			IDictionary<int, int> original = map.AscendingDictionary();
+			map.put((int) Capacity(), (int) -Capacity());
+
+			Assert.That (original, Is.InstanceOf<SortedDictionary<int,int>>());
+			Assert.That(original.ToArray(), Is.EqualTo(expected.ToArray()));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingDictionaryWithLimit_greaterThan(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			WarmUp(expected, 1, Capacity() / 2);
+
+			Assert.That(map.AscendingDictionaryWithLimit((int) Capacity() / 2), Is.EqualTo(expected));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingDictionaryWithLimit_lessThan(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			WarmUp(expected, 1, Capacity());
+
+			var dict = map.AscendingDictionaryWithLimit ((int)Capacity () * 2);
+			Assert.That (dict, Is.InstanceOf<SortedDictionary<int,int>>());
+			Assert.That(dict.ToArray(), Is.EqualTo(expected.ToArray()));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingDictionaryWithLimit_snapshot(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			WarmUp(expected, 1, Capacity() / 2);
+
+			IDictionary<int, int> original = map.AscendingDictionaryWithLimit((int) Capacity() / 2);
+			map.put((int) Capacity(), (int) -Capacity());
+
+			Assert.That (original, Is.InstanceOf<SortedDictionary<int,int>>());
+			Assert.That(original.ToArray(), Is.EqualTo(expected.ToArray()));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void AscendingDictionaryWithLimit_zero(ConcurrentLinkedDictionary<int, int> map) {
+			Assert.That(map.AscendingDictionaryWithLimit(0), emptyMap<int,int>());
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		[ExpectedException(typeof(ArgumentOutOfRangeException))]
+		public void AscendingDictionaryWithLimit_negative(ConcurrentLinkedDictionary<int, int> map) {
+			map.AscendingDictionaryWithLimit(-1);
+		}
+
+		/* ---------------- Descending Map -------------- */
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingDictionary(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			for (int i = (int) Capacity(); i > 0; i--) {
+				expected[i] = -i;
+			}
+			Assert.That(map.DescendingDictionary(), Is.EqualTo(expected));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingDictionary_snapshot(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			for (int i = (int) Capacity(); i > 0; i--) {
+				expected[i] = -i;
+			}
+
+			IDictionary<int, int> original = map.DescendingDictionary();
+			map.put((int) Capacity(), (int) -Capacity());
+
+			Assert.That(original, Is.EqualTo(expected));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingDictionaryWithLimit_greaterThan(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			for (int i = (int) Capacity(); i > Capacity() / 2; i--) {
+				expected[i] = -i;
+			}
+			Assert.That(map.DescendingDictionaryWithLimit((int) Capacity() / 2), Is.EqualTo(expected));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingDictionaryWithLimit_lessThan(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			for (int i = (int) Capacity(); i > 0; i--) {
+				expected[i] = -i;
+			}
+			Assert.That(map.DescendingDictionaryWithLimit((int) Capacity() * 2), Is.EqualTo(expected));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingDictionaryWithLimit_snapshot(ConcurrentLinkedDictionary<int, int> map) {
+			IDictionary<int, int> expected = newLinkedHashMap<int,int>();
+			for (int i = (int) Capacity(); i > Capacity() / 2; i--) {
+				expected[i] = -i;
+			}
+
+			IDictionary<int, int> original = map.DescendingDictionaryWithLimit((int) Capacity() / 2);
+			map.put((int) Capacity(), (int) -Capacity());
+
+			Assert.That(original, Is.EqualTo(expected));
+		}
+
+		[Test]
+		[TestCaseSource("WarmedMap")]
+		public void DescendingDictionaryWithLimit_zero(ConcurrentLinkedDictionary<int, int> map) {
+			Assert.That(map.DescendingDictionaryWithLimit(0), emptyMap<int,int>());
+		}
+		[Test]
+		[TestCaseSource("GuardedMap")]
+		[ExpectedException(typeof(ArgumentOutOfRangeException))]
+		public void DescendingDictionaryWithLimit_negative(ConcurrentLinkedDictionary<int, int> map) {
+			map.DescendingDictionaryWithLimit(-1);
+		}
+
 
 	}
 }
