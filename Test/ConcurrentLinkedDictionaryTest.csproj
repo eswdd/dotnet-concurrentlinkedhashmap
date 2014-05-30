@@ -50,13 +50,13 @@
     <Compile Include="ImmutableDictionary.cs" />
     <Compile Include="DictionaryConstraint.cs" />
     <Compile Include="CollectionConstraints.cs" />
+    <Compile Include="ConcurrentTestHarness.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <None Include="Java\AbstractTest.java" />
     <None Include="Java\CacheType.java" />
     <None Include="Java\ConcurrentMapTest.java" />
-    <None Include="Java\ConcurrentTestHarness.java" />
     <None Include="Java\IsReserializable.java" />
     <None Include="Java\IsValidLinkedDeque.java" />
     <None Include="Java\MemoryLeakTest.java" />
