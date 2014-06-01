@@ -15,9 +15,8 @@ namespace ConcurrentLinkedDictionary.Test
 	[Category("load")]
 	public class MemoryLeakTest
 	{
-		private readonly long statusInterval = 10;
-		private readonly int threads = 10;
-		private readonly long iterations = long.MaxValue;
+		private readonly long statusInterval = 5;
+		private readonly int threads = 250;
 		private long runningTime;
 
 		private ConcurrentLinkedDictionary<long, long> map;
@@ -59,7 +58,7 @@ namespace ConcurrentLinkedDictionary.Test
 			ConcurrentTestHarness.timeTasks(threads, () => {
 				var id = Thread.CurrentThread.ManagedThreadId;
 				map.put(id, id);
-				for (var i=0; i<iterations; i++) {
+				for (;;) {
 					var x= map[id];
 					Thread.Yield();
 					Thread.Sleep(TimeSpan.FromTicks(1));
