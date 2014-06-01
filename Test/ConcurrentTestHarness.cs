@@ -7,7 +7,7 @@ namespace ConcurrentLinkedDictionary.Test
 {
 	/**
  * A testing harness for concurrency related executions.
- * <p/>
+ * <p/>g
  * This harness will ensure that all threads execute at the same time, records
  * the full execution time, and optionally retrieves the responses from each
  * thread. This harness can be used for performance tests, investigations of

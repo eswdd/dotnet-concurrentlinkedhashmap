@@ -51,6 +51,7 @@
     <Compile Include="DictionaryConstraint.cs" />
     <Compile Include="CollectionConstraints.cs" />
     <Compile Include="ConcurrentTestHarness.cs" />
+    <Compile Include="MemoryLeakTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
