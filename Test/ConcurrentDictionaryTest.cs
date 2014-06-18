@@ -2,11 +2,11 @@
 
 namespace Test
 {
-	public class ConcurrentDictionaryTest
-	{
-		public ConcurrentDictionaryTest ()
-		{
-		}
-	}
+    public class ConcurrentDictionaryTest
+    {
+        public ConcurrentDictionaryTest ()
+        {
+        }
+    }
 }
 

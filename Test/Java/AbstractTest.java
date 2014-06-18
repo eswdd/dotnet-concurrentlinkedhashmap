@@ -58,21 +58,6 @@ public abstract class AbstractTest {
     return capacity;
   }
 
-  /* ---------------- Logging methods -------------- */
-
-  protected static void info(String message, Object... args) {
-    if (args.length == 0) {
-      System.out.println(message);
-    } else {
-      System.out.printf(message + "\n", args);
-    }
-  }
-
-  protected static void debug(String message, Object... args) {
-    if (debug) {
-      info(message, args);
-    }
-  }
 
   /* ---------------- Testing aspects -------------- */
 

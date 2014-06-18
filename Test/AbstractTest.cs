@@ -8,248 +8,269 @@ using System.Linq;
 
 namespace ConcurrentLinkedDictionary.Test
 {
-	public abstract class AbstractTest
-	{
-		long _capacity;
+    public abstract class AbstractTest
+    {
+        protected static bool debugEnabled;
+        long _capacity;
 
-		// todo: moq on mono
-		protected DummyEvictionListener<int, int> listener;
-		//protected Mock<IEvictionListener<int, int>> listenerMock;
+        // todo: moq on mono
+        protected DummyEvictionListener<int, int> listener;
+        //protected Mock<IEvictionListener<int, int>> listenerMock;
 
-		[SetUp]
-		public void Before()
-		{
-			listener = new DummyEvictionListener<int,int>();
-		}
+        [SetUp]
+        public void Before()
+        {
+            listener = new DummyEvictionListener<int,int>();
+        }
 
-		protected class DummyEvictionListener<K,V> : IEvictionListener<K,V> 
-		{
-			private List<KeyValuePair<K,V>> _evictions = new List<KeyValuePair<K, V>> ();
-			public void onEviction (K key, V value)
-			{
-				_evictions.Add (new KeyValuePair<K, V> (key, value));
-			}
+        protected class DummyEvictionListener<K,V> : IEvictionListener<K,V> 
+        {
+            private List<KeyValuePair<K,V>> _evictions = new List<KeyValuePair<K, V>> ();
+            public void onEviction (K key, V value)
+            {
+                _evictions.Add (new KeyValuePair<K, V> (key, value));
+            }
 
-			public List<KeyValuePair<K,V>> Evictions {
-				get { return _evictions; }
-			}
-		}
-		protected class FailingEvictionListener<K,V> : IEvictionListener<K,V> 
-		{
+            public List<KeyValuePair<K,V>> Evictions {
+                get { return _evictions; }
+            }
+        }
+        protected class FailingEvictionListener<K,V> : IEvictionListener<K,V> 
+        {
 
-			public void onEviction (K key, V value)
-			{
-				throw new InvalidOperationException ();
-			}
+            public void onEviction (K key, V value)
+            {
+                throw new InvalidOperationException ();
+            }
 
-		}
+        }
 
-		protected AbstractTest (TestType tt)
-		{
-			switch (tt) 
-			{
-			case TestType.Standard:
-				InitClass (100);
-				break;
-			default:
-				throw new ArgumentException (""+tt);
-			}
-		}
+        protected AbstractTest (TestType tt)
+        {
+            switch (tt) 
+            {
+            case TestType.Standard:
+                InitClass (100);
+                break;
+            case TestType.Stress:
+                InitClass (50000);
+                break;
+            default:
+                throw new ArgumentException (""+tt);
+            }
+        }
 
-		public void InitClass(long capacity) {
-			_capacity = capacity;
-			InitMocks();
-		}
+        public void InitClass(long capacity) {
+            _capacity = capacity;
+            InitMocks();
+        }
 
-		void InitMocks ()
-		{
-			// todo
-		}
+        void InitMocks ()
+        {
+            // todo
+        }
 
-		/** Retrieves the maximum weighted capacity to build maps with. */
-		protected long Capacity() {
-			return _capacity;
-		}
+        /* ---------------- Logging methods -------------- */
 
-		protected IDictionary<K,V> immutableCopyOf<K,V>(IDictionary<K,V> source)
-		{
-			return new ImmutableDictionary<K,V> (source);
-		}
+        protected static void info(String message, params Object[] args) {
+            Console.WriteLine(message, args);
+        }
 
-		/* ---------------- Map providers -------------- */
+        protected static void debug(String message, params Object[] args) {
+            if (debugEnabled) {
+                info(message, args);
+            }
+        }
+        /** Retrieves the maximum weighted capacity to build maps with. */
+        protected long Capacity() {
+            return _capacity;
+        }
 
-		/** Provides a builder with the capacity set. */
+        protected IDictionary<K,V> immutableCopyOf<K,V>(IDictionary<K,V> source)
+        {
+            return new ImmutableDictionary<K,V> (source);
+        }
 
-		public Object[][] Builder() {
-			return new Object[][] {
-				new Object[] {new Builder<int, int>().MaximumWeightedCapacity(Capacity())}
-			};
-		}
+        /* ---------------- Map providers -------------- */
 
-		public Object[][] BuilderIntByteArray() {
-			return new Object[][] {
-				new Object[] {new Builder<int, byte[]>().MaximumWeightedCapacity(Capacity())}
-			};
-		}
+        /** Provides a builder with the capacity set. */
 
-		public Object[][] BuilderIntCollectionOfInt() {
-			return new Object[][] {
-				new Object[] {new Builder<int, ICollection<int>>().MaximumWeightedCapacity(Capacity())}
-			};
-		}
+        public Object[][] Builder() {
+            return new Object[][] {
+                new Object[] {new Builder<int, int>().MaximumWeightedCapacity(Capacity())}
+            };
+        }
 
-		public Object[][] EmptyMap<K,V>() {
-			return new Object[][] {
-			    new Object[] { newEmptyMap<K,V>() }
-			};
-		}
+        public Object[][] BuilderIntByteArray() {
+            return new Object[][] {
+                new Object[] {new Builder<int, byte[]>().MaximumWeightedCapacity(Capacity())}
+            };
+        }
 
-		/** Creates a map with the default capacity. */
-		protected ConcurrentLinkedDictionary<K, V> newEmptyMap<K,V>() {
-			return new Builder<K, V>()
-					.MaximumWeightedCapacity(Capacity())
-					.Build();
-		}
+        public Object[][] BuilderIntCollectionOfInt() {
+            return new Object[][] {
+                new Object[] {new Builder<int, ICollection<int>>().MaximumWeightedCapacity(Capacity())}
+            };
+        }
 
-		/** Provides a guarded map for test methods. */
-		public object[][] GuardedMap() {
-			return new object[][] {
-				new object[]{ newGuarded<int,int>() }
-			};
-		}
+        public Object[][] BuilderIntListOfInt() {
+            return new Object[][] {
+                new Object[] {new Builder<int, IList<int>>().MaximumWeightedCapacity(Capacity())}
+            };
+        }
 
-		/** Creates a map that fails if an eviction occurs. */
-		protected ConcurrentLinkedDictionary<K, V> newGuarded<K,V>() {
-			var listener = guardingListener<K,V>();
-			return new Builder<K, V>()
-					.MaximumWeightedCapacity(Capacity())
-					.Listener(listener)
-					.Build();
-		}
+        public Object[][] EmptyMap<K,V>() {
+            return new Object[][] {
+                new Object[] { newEmptyMap<K,V>() }
+            };
+        }
 
-		public Object[][] EmptyWeightedMap<K,V>() {
-			return new Object[][] {
-				 new Object[] { newEmptyWeightedMap<K,V>() }
-			};
-		}
+        /** Creates a map with the default capacity. */
+        protected ConcurrentLinkedDictionary<K, V> newEmptyMap<K,V>() {
+            return new Builder<K, V>()
+                    .MaximumWeightedCapacity(Capacity())
+                    .Build();
+        }
 
-		private ConcurrentLinkedDictionary<K, IEnumerable<V>> newEmptyWeightedMap<K,V>() {
-			return new Builder<K, IEnumerable<V>>()
-					.MaximumWeightedCapacity(Capacity())
-					.Weigher(Weighers.Enumerable<V>())
-					.Build();
-		}
+        /** Provides a guarded map for test methods. */
+        public object[][] GuardedMap() {
+            return new object[][] {
+                new object[]{ newGuarded<int,int>() }
+            };
+        }
 
-		public Object[][] GuardedWeightedMap<K,V>() {
-			return new Object[][] {
-				new Object[] { newGuardedWeightedMap<K,V>() }
-			};
-		}
+        /** Creates a map that fails if an eviction occurs. */
+        protected ConcurrentLinkedDictionary<K, V> newGuarded<K,V>() {
+            var listener = guardingListener<K,V>();
+            return new Builder<K, V>()
+                    .MaximumWeightedCapacity(Capacity())
+                    .Listener(listener)
+                    .Build();
+        }
 
-		private ConcurrentLinkedDictionary<K, IEnumerable<V>> newGuardedWeightedMap<K, V>() {
-			var listener = guardingListener<K,IEnumerable<V>>();
-			return new Builder<K, IEnumerable<V>>()
-					.MaximumWeightedCapacity(Capacity())
-					.Weigher(Weighers.Enumerable<V>())
-					.Listener(listener)
-					.Build();
-		}
+        public Object[][] EmptyWeightedMap<K,V>() {
+            return new Object[][] {
+                 new Object[] { newEmptyWeightedMap<K,V>() }
+            };
+        }
 
-		private IEvictionListener<K, V> guardingListener<K, V>() {
-			// todo: for now have got a concrete impl until can get moq working in mono
-			/*
-			var guardingListener = (IEvictionListener<K, V>) listener;
-			doThrow(new AssertionError()).when(guardingListener)
-				.onEviction(Mockito.<K>any(), Mockito.<V>any());
-			return guardingListener;
-			*/
-			return new GuardingListener<K, V> ();
-		}
+        private ConcurrentLinkedDictionary<K, IEnumerable<V>> newEmptyWeightedMap<K,V>() {
+            return new Builder<K, IEnumerable<V>>()
+                    .MaximumWeightedCapacity(Capacity())
+                    .Weigher(Weighers.Enumerable<V>())
+                    .Build();
+        }
 
-		private class GuardingListener<K,V> : IEvictionListener<K,V>
-		{
-			public void onEviction (K key, V value)
-			{
-				throw new AssertionException ("onEviction called on guarded listener");
-			}
-		}
+        public Object[][] GuardedWeightedMap<K,V>() {
+            return new Object[][] {
+                new Object[] { newGuardedWeightedMap<K,V>() }
+            };
+        }
 
-		/** Creates a map with warmed to capacity. */
-		protected ConcurrentLinkedDictionary<int,int> newWarmedMap() {
-			var map = newEmptyMap<int,int>();
-			WarmUp(map, 1, Capacity());
-			return map;
-		}
+        private ConcurrentLinkedDictionary<K, IEnumerable<V>> newGuardedWeightedMap<K, V>() {
+            var listener = guardingListener<K,IEnumerable<V>>();
+            return new Builder<K, IEnumerable<V>>()
+                    .MaximumWeightedCapacity(Capacity())
+                    .Weigher(Weighers.Enumerable<V>())
+                    .Listener(listener)
+                    .Build();
+        }
 
-		public Object[][] WarmedMap() {
-			return new Object[][] {
-				new Object[] { newWarmedMap() }
-			};
-		}
+        private IEvictionListener<K, V> guardingListener<K, V>() {
+            // todo: for now have got a concrete impl until can get moq working in mono
+            /*
+            var guardingListener = (IEvictionListener<K, V>) listener;
+            doThrow(new AssertionError()).when(guardingListener)
+                .onEviction(Mockito.<K>any(), Mockito.<V>any());
+            return guardingListener;
+            */
+            return new GuardingListener<K, V> ();
+        }
 
+        private class GuardingListener<K,V> : IEvictionListener<K,V>
+        {
+            public void onEviction (K key, V value)
+            {
+                throw new AssertionException ("onEviction called on guarded listener");
+            }
+        }
 
-		/* ---------------- Utility methods ------------- */
+        /** Creates a map with warmed to capacity. */
+        protected ConcurrentLinkedDictionary<int,int> newWarmedMap() {
+            var map = newEmptyMap<int,int>();
+            WarmUp(map, 1, Capacity());
+            return map;
+        }
 
-		/**
-		* Populates the map with the half-closed interval [start, start+count) where the
-			* value is the negation of the key.
-			*/
-			protected static void WarmUp(IDictionary<int, int> map, int start, long count) {
-				for (var i = start; i < start+count; i++) {
-					Assert.That (map.ContainsKey(i), Is.False);
-					map [i] = -i;
-				}
-			}
-
-			/* ------------ Constraint providers ------------ */
-			protected IResolveConstraint emptyCollection<T>()
-			{
-				return new IsEmptyCollection<T> ();
-			}
-			protected IResolveConstraint emptyMap<K,V>()
-			{
-				return new IsEmptyDictionary<K,V> ();
-			}
-
-			protected IResolveConstraint validConcurrentLinkedDictionary<K,V>()
-		{
-			return new IsValidConcurrentLinkedDictionary<K,V> ();
-		}
-
-			protected Constraint HasCount(int count)
-			{
-				return CollectionConstraints.HasCount (count);
-			}
-
-		protected enum TestType
-		{
-			Standard
-		}
+        public Object[][] WarmedMap() {
+            return new Object[][] {
+                new Object[] { newWarmedMap() }
+            };
+        }
 
 
-			protected void waitUntil(Func<bool> func)
-			{
-				while (!func ()) {
-					Thread.Sleep (10);
-				}
-			}
+        /* ---------------- Utility methods ------------- */
 
-			protected IList<T> asList<T> (params T[] ts)
-			{
-				return ts.ToList ();
-			}
+        /**
+        * Populates the map with the half-closed interval [start, start+count) where the
+            * value is the negation of the key.
+            */
+            protected static void WarmUp(IDictionary<int, int> map, int start, long count) {
+                for (var i = start; i < start+count; i++) {
+                    Assert.That (map.ContainsKey(i), Is.False);
+                    map [i] = -i;
+                }
+            }
 
-			protected IDictionary<K,V> singletonMap<K,V> (K k, V v)
-			{
-				var ret = new Dictionary<K,V> ();
-				ret.Add (k, v);
-				return ret;
-			}
+            /* ------------ Constraint providers ------------ */
+            protected IResolveConstraint emptyCollection<T>()
+            {
+                return new IsEmptyCollection<T> ();
+            }
+            protected IResolveConstraint emptyMap<K,V>()
+            {
+                return new IsEmptyDictionary<K,V> ();
+            }
 
-			protected IDictionary<K, V> newLinkedHashMap<K,V> ()
-			{
-				return new SortedDictionary<K, V>();
-			}
-	}
+            protected IResolveConstraint validConcurrentLinkedDictionary<K,V>()
+        {
+            return new IsValidConcurrentLinkedDictionary<K,V> ();
+        }
+
+            protected Constraint HasCount(int count)
+            {
+                return CollectionConstraints.HasCount (count);
+            }
+
+        protected enum TestType
+        {
+                Standard, Stress, Load, CacheBenchmark, CaliperBenchmark, EfficiencyBenchmark, PerfHashBenchmark
+        }
+
+
+            protected void waitUntil(Func<bool> func)
+            {
+                while (!func ()) {
+                    Thread.Sleep (10);
+                }
+            }
+
+            protected IList<T> asList<T> (params T[] ts)
+            {
+                return ts.ToList ();
+            }
+
+            protected IDictionary<K,V> singletonMap<K,V> (K k, V v)
+            {
+                var ret = new Dictionary<K,V> ();
+                ret.Add (k, v);
+                return ret;
+            }
+
+            protected IDictionary<K, V> newLinkedHashMap<K,V> ()
+            {
+                return new SortedDictionary<K, V>();
+            }
+    }
 }
 

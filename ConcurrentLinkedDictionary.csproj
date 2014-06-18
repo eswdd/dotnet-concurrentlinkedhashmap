@@ -7,7 +7,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{A727D6EE-6322-40B1-B114-FB6069C2CB21}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>blah</RootNamespace>
+    <RootNamespace>ConcurrentLinkedDictionary</RootNamespace>
     <AssemblyName>ConcurrentLinkedDictionary</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
@@ -40,6 +40,9 @@
     <Compile Include="Weighers.cs" />
     <Compile Include="IDeque.cs" />
     <Compile Include="Atomics.cs" />
+    <Compile Include="ArrayExt.cs" />
+    <Compile Include="RandomExt.cs" />
+    <Compile Include="CollectionExt.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -55,6 +58,8 @@
     <None Include="Java\Weighers.java" />
     <None Include="Java\package-info.java" />
     <None Include="Java\ConcurrentLinkedHashMap.java" />
+    <None Include="ConcurrentLinkedDictionary.xbuild" />
+    <None Include="appveyor.yml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Java\" />

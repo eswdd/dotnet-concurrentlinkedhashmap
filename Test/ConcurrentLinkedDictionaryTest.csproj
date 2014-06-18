@@ -20,6 +20,13 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <UnitTestInformation>
+      <UnitTestInformation>
+        <Test Path="">
+          <Options EnableFilter="True" Exclude="False" ctype="NUnitCategoryOptions" />
+        </Test>
+      </UnitTestInformation>
+    </UnitTestInformation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -52,6 +59,8 @@
     <Compile Include="CollectionConstraints.cs" />
     <Compile Include="ConcurrentTestHarness.cs" />
     <Compile Include="MemoryLeakTest.cs" />
+    <Compile Include="MultiThreadedTest.cs" />
+    <Compile Include="Benchmark\Benchmarks.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -60,7 +69,6 @@
     <None Include="Java\ConcurrentMapTest.java" />
     <None Include="Java\IsReserializable.java" />
     <None Include="Java\IsValidLinkedDeque.java" />
-    <None Include="Java\MemoryLeakTest.java" />
     <None Include="Java\MultiThreadedTest.java" />
     <None Include="Java\Profile.java" />
     <None Include="Java\WeigherTest.java" />
@@ -91,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Java\" />
+    <Folder Include="Benchmark\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ConcurrentLinkedDictionary.csproj">
