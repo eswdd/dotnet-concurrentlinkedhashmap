@@ -69,7 +69,6 @@
     <None Include="Java\ConcurrentMapTest.java" />
     <None Include="Java\IsReserializable.java" />
     <None Include="Java\IsValidLinkedDeque.java" />
-    <None Include="Java\MultiThreadedTest.java" />
     <None Include="Java\Profile.java" />
     <None Include="Java\WeigherTest.java" />
     <None Include="Java\Benchmark\Benchmarks.java" />
